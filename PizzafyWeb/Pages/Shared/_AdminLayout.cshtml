@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Pizzafy Admin</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="preload" href="~/images/product-placeholder.svg" as="image" type="image/svg+xml" />
+</head>
+<body class="admin-body">
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <!-- Logo Section -->
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <img src="~/images/logoWhiteOutline.png" alt="Pizzafy Logo" class="logo-image" />
+                    <span class="logo-text">Pizzafy</span>
+                </div>
+            </div>
+
+            <!-- Admin Profile -->
+            <div class="admin-profile">
+                <div class="profile-avatar">
+                    <span class="avatar-text">AD</span>
+                </div>
+                <span class="profile-name">Administrator</span>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h4 class="nav-section-title">MANAGE</h4>
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="/Admin/MenuManagement" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/MenuManagement" ? "active" : "")">
+                                <i class="fas fa-list"></i>
+                                <span>List of Products</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Admin/AddProduct" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/AddProduct" ? "active" : "")">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Product</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Admin/Orders" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Orders" ? "active" : "")">
+                                <i class="fas fa-truck"></i>
+                                <span>Order Status</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Sign Out -->
+            <div class="sidebar-footer">
+                <a href="/Logout" class="sign-out-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Sign Out</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

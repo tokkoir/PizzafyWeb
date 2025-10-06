@@ -1,0 +1,725 @@
+@page
+@model PizzafyWeb.Pages.RegisterModel
+@{
+    ViewData["Title"] = "Register - Pizzafy";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #3e0703;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .register-container {
+            background: #f5f5dc;
+            border-radius: 15px;
+            padding: 30px 40px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+
+        .registration-title {
+            color: #333;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            font-family: Arial, sans-serif;
+            transition: color 0.3s ease;
+            line-height: 1.2;
+        }
+
+        a .registration-title:hover {
+            color: #555;
+        }
+
+        .pizza-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pizza-icon a {
+            display: inline-block;
+        }
+
+        .pizza-icon img {
+            transition: transform 0.3s ease;
+        }
+
+        .pizza-icon a:hover img {
+            transform: rotate(15deg) scale(1.1);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            margin-bottom: 0;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+            text-align: left;
+            flex: 1;
+        }
+
+        .form-group.full-width {
+            width: 100%;
+        }
+
+        .form-group p {
+            margin: 0 0 4px 0;
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 10px;
+            color: #999;
+            font-size: 14px;
+            z-index: 1;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px 10px 35px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background: #fff;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #d2691e;
+            box-shadow: 0 0 5px rgba(210, 105, 30, 0.3);
+        }
+
+        .input-container:focus-within .input-icon {
+            color: #d2691e;
+        }
+
+        .create-button {
+            background: #8b0000;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        .create-button:hover {
+            background: #660000;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .success-message {
+            color: #2e7d32;
+            background: #e8f5e8;
+            border: 1px solid #c8e6c9;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .general-error {
+            color: #d32f2f;
+            background: #ffebee;
+            border: 1px solid #ffcdd2;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .login-link {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .login-link a {
+            color: #d2691e;
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Enhanced Mobile Responsive Styles */
+        @@media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .register-container {
+                padding: 30px 25px;
+                border-radius: 10px;
+                max-width: 100%;
+                margin: 5px 0;
+            }
+
+            .registration-title {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            .pizza-icon {
+                font-size: 36px;
+                margin-bottom: 6px;
+            }
+
+            .pizza-icon img {
+                width: 36px !important;
+                height: 36px !important;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+                margin-bottom: 8px;
+            }
+
+            .form-row .form-group {
+                margin-bottom: 10px;
+                width: 100%;
+            }
+
+            .form-input {
+                padding: 14px 15px 14px 40px;
+                font-size: 16px;
+            }
+
+            .create-button {
+                padding: 14px 40px;
+                font-size: 16px;
+                margin-top: 12px;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .register-container {
+                padding: 25px 20px;
+                border-radius: 8px;
+                margin: 3px 0;
+            }
+
+            .registration-title {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+
+            .pizza-icon {
+                font-size: 32px;
+                margin-bottom: 4px;
+            }
+
+            .pizza-icon img {
+                width: 32px !important;
+                height: 32px !important;
+            }
+
+            .form-group p {
+                font-size: 12px;
+                margin-bottom: 3px;
+            }
+
+            .form-input {
+                padding: 12px 15px 12px 35px;
+                font-size: 16px;
+            }
+
+            .input-icon {
+                left: 10px;
+                font-size: 14px;
+            }
+
+            .create-button {
+                padding: 12px 30px;
+                font-size: 16px;
+                margin-top: 10px;
+            }
+
+            .login-link {
+                font-size: 13px;
+                margin-top: 10px;
+            }
+
+            .error-message {
+                font-size: 10px;
+            }
+
+            .success-message,
+            .general-error {
+                font-size: 12px;
+                padding: 6px;
+            }
+
+            .form-group {
+                margin-bottom: 8px;
+            }
+        }
+
+        @@media (max-width: 360px) {
+            .register-container {
+                padding: 20px 15px;
+            }
+
+            .registration-title {
+                font-size: 22px;
+                margin-bottom: 12px;
+            }
+
+            .form-input {
+                padding: 10px 12px 10px 32px;
+                font-size: 16px;
+            }
+
+            .input-icon {
+                left: 8px;
+                font-size: 13px;
+            }
+        }
+
+        /* Ultra small screens - Enhanced for 320x992 */
+        @@media (max-width: 320px) {
+            body {
+                padding: 5px;
+            }
+
+            .register-container {
+                padding: 8px 6px;
+                border-radius: 4px;
+                margin: 2px 0;
+                max-width: calc(100vw - 10px);
+            }
+
+            .registration-title {
+                font-size: 14px;
+                margin-bottom: 6px;
+                line-height: 1.1;
+            }
+
+            .pizza-icon {
+                font-size: 20px;
+                margin-bottom: 1px;
+            }
+
+            .pizza-icon img {
+                width: 20px !important;
+                height: 20px !important;
+            }
+
+            .form-group {
+                margin-bottom: 4px;
+            }
+
+            .form-group p {
+                font-size: 10px;
+                margin-bottom: 1px;
+                font-weight: 500;
+            }
+
+            .form-input {
+                padding: 4px 6px 4px 20px;
+                font-size: 14px;
+                border-radius: 3px;
+            }
+
+            .input-icon {
+                left: 3px;
+                font-size: 10px;
+            }
+
+            .create-button {
+                padding: 4px 12px;
+                font-size: 12px;
+                margin-top: 4px;
+                border-radius: 3px;
+            }
+
+            .login-link {
+                font-size: 10px;
+                margin-top: 4px;
+            }
+
+            .error-message {
+                font-size: 8px;
+                margin-top: 1px;
+            }
+
+            .success-message,
+            .general-error {
+                font-size: 10px;
+                padding: 3px;
+                margin-bottom: 4px;
+                border-radius: 3px;
+            }
+
+            .form-row {
+                gap: 4px;
+                margin-bottom: 2px;
+            }
+
+            .form-row .form-group {
+                margin-bottom: 4px;
+            }
+        }
+
+        /* Very tall narrow screens (like 320x992) */
+        @@media (max-width: 320px) and (min-height: 800px) {
+            .register-container {
+                padding: 20px 15px;
+                margin: 5px auto;
+                max-width: 300px;
+            }
+
+            .registration-title {
+                font-size: 16px;
+                margin-bottom: 8px;
+            }
+
+            .pizza-icon {
+                font-size: 22px;
+                margin-bottom: 3px;
+            }
+
+            .pizza-icon img {
+                width: 22px !important;
+                height: 22px !important;
+            }
+
+            .form-group {
+                margin-bottom: 6px;
+            }
+
+            .form-group p {
+                font-size: 11px;
+                margin-bottom: 2px;
+            }
+
+            .form-input {
+                padding: 10px 12px 10px 32px;
+                font-size: 14px;
+            }
+
+            .input-icon {
+                left: 4px;
+                font-size: 11px;
+            }
+
+            .create-button {
+                padding: 6px 15px;
+                font-size: 13px;
+                margin-top: 6px;
+            }
+
+            .login-link {
+                font-size: 11px;
+                margin-top: 6px;
+            }
+        }
+
+        /* Landscape orientation for small devices */
+        @@media (max-height: 600px) and (orientation: landscape) {
+            body {
+                padding: 5px;
+            }
+
+            .register-container {
+                padding: 15px;
+                margin: 2px 0;
+            }
+
+            .registration-title {
+                font-size: 18px;
+                margin-bottom: 10px;
+            }
+
+            .pizza-icon {
+                font-size: 28px;
+                margin-bottom: 2px;
+            }
+
+            .pizza-icon img {
+                width: 28px !important;
+                height: 28px !important;
+            }
+
+            .form-group {
+                margin-bottom: 6px;
+            }
+
+            .create-button {
+                margin-top: 8px;
+                padding: 8px 25px;
+            }
+
+            .form-row {
+                margin-bottom: 4px;
+            }
+        }
+
+        /* Very short screens */
+        @@media (max-height: 500px) {
+            .register-container {
+                padding: 10px;
+            }
+
+            .registration-title {
+                font-size: 16px;
+                margin-bottom: 8px;
+            }
+
+            .pizza-icon {
+                display: none; /* Hide logo on very short screens */
+            }
+
+            .form-group {
+                margin-bottom: 4px;
+            }
+
+            .form-group p {
+                font-size: 11px;
+                margin-bottom: 2px;
+            }
+
+            .create-button {
+                margin-top: 6px;
+                padding: 6px 20px;
+                font-size: 14px;
+            }
+        }
+
+        .is-invalid {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 5px rgba(220, 53, 69, 0.3) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="pizza-icon">
+            <a href="/" style="text-decoration: none; color: inherit;">
+                <img src="~/images/logo.png" alt="Pizzafy Logo" style="width: 48px; height: 48px; cursor: pointer;" />
+            </a>
+        </div>
+        <a href="/" style="text-decoration: none; color: inherit;">
+            <h1 class="registration-title">Create Your Account</h1>
+        </a>
+        
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="success-message">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="general-error">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <form method="post">
+            <!-- First Name and Last Name row -->
+            <div class="form-row">
+                <div class="form-group">
+                    <p>First Name *</p>
+                    <div class="input-container">
+                        <input asp-for="Register.FirstName" class="form-input" placeholder="Firstname" required />
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
+                    <span asp-validation-for="Register.FirstName" class="error-message"></span>
+                </div>
+                <div class="form-group">
+                    <p>Last Name *</p>
+                    <div class="input-container">
+                        <input asp-for="Register.LastName" class="form-input" placeholder="Lastname" required />
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
+                    <span asp-validation-for="Register.LastName" class="error-message"></span>
+                </div>
+            </div>
+
+            <!-- Username -->
+            <div class="form-group full-width">
+                <p>Username *</p>
+                <div class="input-container">
+                    <input asp-for="Register.Username" class="form-input" placeholder="Username" required />
+                    <i class="fas fa-user-circle input-icon"></i>
+                </div>
+                <span asp-validation-for="Register.Username" class="error-message"></span>
+            </div>
+
+            <!-- Address -->
+            <div class="form-group full-width">
+                <p>Address *</p>
+                <div class="input-container">
+                    <input asp-for="Register.Address" class="form-input" placeholder="Address" required />
+                    <i class="fas fa-home input-icon"></i>
+                </div>
+                <span asp-validation-for="Register.Address" class="error-message"></span>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="form-group full-width">
+                <p>Phone Number *</p>
+                <div class="input-container">
+                    <input asp-for="Register.PhoneNumber" class="form-input" placeholder="Phone Number" required />
+                    <i class="fas fa-phone input-icon"></i>
+                </div>
+                <span asp-validation-for="Register.PhoneNumber" class="error-message"></span>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group full-width">
+                <p>Password *</p>
+                <div class="input-container">
+                    <input asp-for="Register.Password" class="form-input" placeholder="Password" type="password" required />
+                    <i class="fas fa-lock input-icon"></i>
+                </div>
+                <span asp-validation-for="Register.Password" class="error-message"></span>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="form-group full-width">
+                <p>Confirm Password *</p>
+                <div class="input-container">
+                    <input asp-for="Register.ConfirmPassword" class="form-input" placeholder="Confirm Password" type="password" required />
+                    <i class="fas fa-lock input-icon"></i>
+                </div>
+                <span asp-validation-for="Register.ConfirmPassword" class="error-message"></span>
+            </div>
+
+            <button type="submit" class="create-button">REGISTER</button>
+        </form>
+
+        <div class="login-link">
+            Already have an account? <a href="/Login">Login now</a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+    
+    <script>
+        // Additional client-side validation and error handling
+        $(document).ready(function() {
+            // Custom validation for password confirmation
+            $('input[name="Register.ConfirmPassword"]').on('blur', function() {
+                var password = $('input[name="Register.Password"]').val();
+                var confirmPassword = $(this).val();
+                
+                if (password && confirmPassword && password !== confirmPassword) {
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            // Real-time validation for all required fields
+            $('input[required]').on('blur', function() {
+                if (!$(this).val().trim()) {
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            // Phone number format validation
+            $('input[name="Register.PhoneNumber"]').on('blur', function() {
+                var phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+                var phoneValue = $(this).val().trim();
+                
+                if (phoneValue && !phoneRegex.test(phoneValue.replace(/[\s\-\(\)]/g, ''))) {
+                    $(this).addClass('is-invalid');
+                } else if (phoneValue) {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            // Form submission validation
+            $('form').on('submit', function(e) {
+                var isValid = true;
+                
+                // Check all required fields
+                $('input[required]').each(function() {
+                    if (!$(this).val().trim()) {
+                        isValid = false;
+                        $(this).addClass('is-invalid');
+                    } else {
+                        $(this).removeClass('is-invalid');
+                    }
+                });
+
+                // Check password confirmation
+                var password = $('input[name="Register.Password"]').val();
+                var confirmPassword = $('input[name="Register.ConfirmPassword"]').val();
+                
+                if (password !== confirmPassword) {
+                    isValid = false;
+                    $('input[name="Register.ConfirmPassword"]').addClass('is-invalid');
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('Please fill in all required fields correctly.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

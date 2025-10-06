@@ -1,0 +1,470 @@
+﻿@page
+@model IndexModel
+@using PizzafyWeb.Models
+@{
+    ViewData["Title"] = "Home";
+}
+
+<!-- Alert Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Hero Section with bg.png Background -->
+<section class="hero-section-new">
+    <div class="hero-content-new">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h1 class="hero-title-new">
+                        Where every<br>
+                        bite tastes<br>
+                        like home
+                    </h1>
+                    <div class="hero-description mt-4">
+                        <p class="lead">Experience authentic flavors crafted with love and delivered fresh to your door</p>
+                    </div>
+                    @if (!User.Identity!.IsAuthenticated)
+                    {
+                        <div class="hero-buttons mt-5">
+                            <a href="/Register" class="btn btn-hero btn-order">Get Started</a>
+                            <a href="#features" class="btn btn-hero btn-menu">Learn More</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (User.Identity!.IsAuthenticated)
+{
+    <!-- Menu Category Section for Authenticated Users -->
+    <section id="menu-section" class="menu-category-section" style="background:#FFF8DC; padding: 4rem 0; min-height: 100vh;">
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col-12 text-center">
+                    <h2 style="color:#8c1007;font-weight:900;font-size:3.5rem;letter-spacing:4px;margin-bottom:3rem;text-transform:uppercase;">MENU</h2>
+                    
+                    <!-- Search Bar -->
+                    <div class="search-container mb-4">
+                        <div class="position-relative d-inline-block">
+                            <input type="text" id="searchInput" class="form-control search-input" style="width:450px;height:60px;border-radius:30px;border:3px solid #ddd;padding-left:25px;padding-right:60px;font-size:1.2rem;box-shadow:0 4px 15px rgba(0,0,0,0.1);" placeholder="Search in menu" />
+                            <button class="search-btn position-absolute" style="right:10px;top:10px;width:40px;height:40px;border-radius:50%;background:#8c1007;border:none;color:white;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Category Icons with Labels (aligned) -->
+                    <div class="category-chooser mb-5">
+                        <div class="d-flex justify-content-center align-items-start" style="gap:60px; flex-wrap:wrap;">
+                            <div class="category-item text-center">
+                                <button class="category-btn active" data-category="all" style="background:#8c1007;color:white;border:none;border-radius:18px;width:90px;height:90px;margin:0;font-size:2.2rem;box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                                <div class="mt-2">
+                                    <small style="color:#8c1007;font-weight:700;font-size:0.9rem;">ALL</small>
+                                </div>
+                            </div>
+                            <div class="category-item text-center">
+                                <button class="category-btn" data-category="pizza" style="background:#8c1007;color:white;border:none;border-radius:18px;width:90px;height:90px;margin:0;font-size:2.2rem;box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
+                                    <i class="fas fa-pizza-slice"></i>
+                                </button>
+                                <div class="mt-2">
+                                    <small style="color:#8c1007;font-weight:700;font-size:0.9rem;">PIZZA</small>
+                                </div>
+                            </div>
+                            <div class="category-item text-center">
+                                <button class="category-btn" data-category="sides" style="background:#8c1007;color:white;border:none;border-radius:18px;width:90px;height:90px;margin:0;font-size:2.2rem;box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
+                                    <i class="fas fa-hamburger"></i>
+                                </button>
+                                <div class="mt-2">
+                                    <small style="color:#8c1007;font-weight:700;font-size:0.9rem;">SIDES</small>
+                                </div>
+                            </div>
+                            <div class="category-item text-center">
+                                <button class="category-btn" data-category="beverages" style="background:#8c1007;color:white;border:none;border-radius:18px;width:90px;height:90px;margin:0;font-size:2.2rem;box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
+                                    <i class="fas fa-glass-whiskey"></i>
+                                </button>
+                                <div class="mt-2">
+                                    <small style="color:#8c1007;font-weight:700;font-size:0.9rem;">BEVERAGES</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="text-center" style="display:none;">
+                <div class="spinner-border text-danger" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            
+            <!-- Product Cards Container -->
+            <div class="row justify-content-center" id="product-container">
+                @await Html.PartialAsync("_ProductCards", Model.PizzaProducts)
+            </div>
+            
+            <!-- Pagination -->
+            <div class="row mt-5" id="pagination-container" style="display:none;">
+                <div class="col-12 d-flex justify-content-center">
+                    <nav aria-label="Product pagination">
+                        <ul class="pagination" id="pagination-list" style="gap:12px;">
+                            <!-- Pagination buttons will be dynamically generated -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+else
+{
+    <!-- Features Section for Non-Authenticated Users -->
+    <section class="features-section py-5" id="features">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center mb-5">
+                    <h2 class="section-title">Why Choose Pizzafy?</h2>
+                    <p class="section-subtitle">Experience the difference that quality makes</p>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-shipping-fast"></i>
+                        </div>
+                        <h4>Lightning Fast Delivery</h4>
+                        <p>Hot, fresh pizza delivered to your door in 30 minutes or less - guaranteed!</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-seedling"></i>
+                        </div>
+                        <h4>Premium Ingredients</h4>
+                        <p>We source only the finest, freshest ingredients from trusted local suppliers</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <h4>Amazing Deals</h4>
+                        <p>Enjoy exclusive discounts and special offers on your favorite pizzas every day</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Call to Action -->
+            <div class="row mt-5">
+                <div class="col-12 text-center">
+                    <div class="cta-section">
+                        <h3>Ready to get started?</h3>
+                        <p>Join thousands of satisfied customers who choose Pizzafy</p>
+                        <div class="cta-buttons mt-4">
+                            <a href="/Register" class="btn btn-cta btn-primary">Create Account</a>
+                            <a href="/Login" class="btn btn-cta btn-outline">Sign In</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@functions {
+    private string GetProductDescription(string itemName)
+    {
+        var descriptions = new Dictionary<string, string>
+        {
+            {"Hawaiian", "Ham & Pineapple"},
+            {"Meat Lovers", "Pepperoni, sausage, bacon, ham and cheese"},
+            {"BBQ Chicken", "Spicy barbecue sauce, diced chicken, peppers, onion, and cilantro"},
+            {"Spinach & Feta", "Red onion, spinach, feta cheese and mushrooms"},
+            {"Margherita", "Fresh mozzarella, tomatoes, and basil"},
+            {"Pepperoni", "Classic pepperoni with mozzarella cheese"},
+            {"Veggie Supreme", "Bell peppers, mushrooms, onions, olives, and tomatoes"},
+            {"Four Cheese", "Mozzarella, cheddar, parmesan, and provolone"},
+            {"Chicken Wings", "Crispy chicken wings with your choice of sauce"},
+            {"Garlic Bread", "Fresh baked bread with garlic butter"},
+            {"Caesar Salad", "Fresh romaine lettuce with caesar dressing"},
+            {"Coca Cola", "Classic refreshing cola drink"},
+            {"Sprite", "Lemon-lime flavored soft drink"},
+            {"Orange Juice", "Fresh squeezed orange juice"}
+        };
+        
+        return descriptions.ContainsKey(itemName) ? descriptions[itemName] : "Delicious item made with fresh ingredients";
+    }
+}
+
+@section Scripts {
+    <script>
+        let currentCategory = 'all';
+        let currentPage = 1;
+        let currentSearch = '';
+
+        // Category switching with AJAX
+        document.querySelectorAll('.category-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.style.transform = 'scale(1)';
+                    btn.style.boxShadow = '0 6px 20px rgba(140,16,7,0.4)';
+                });
+                this.classList.add('active');
+                this.style.transform = 'scale(1.1)';
+                this.style.boxShadow = '0 8px 25px rgba(140,16,7,0.6)'
+
+                currentCategory = this.dataset.category;
+                currentPage = 1;
+
+                const pageTitle = document.querySelector('h2');
+                pageTitle.textContent = currentCategory === 'all' ? 'MENU' : `${currentCategory.toUpperCase()} MENU`;
+
+                await loadProducts();
+            });
+        });
+
+        // Search functionality
+        let searchTimeout;
+        const searchInputEl = document.getElementById('searchInput');
+        if (searchInputEl) {
+            searchInputEl.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                currentSearch = this.value.toLowerCase();
+                searchTimeout = setTimeout(async () => {
+                    currentPage = 1;
+                    await loadProducts();
+                }, 500);
+            });
+        }
+
+        // Load products via AJAX
+        async function loadProducts() {
+            const container = document.getElementById('product-container');
+            const loading = document.getElementById('loadingIndicator');
+            const paginationContainer = document.getElementById('pagination-container');
+
+            loading.style.display = 'block';
+            container.style.opacity = '0.5';
+
+            try {
+                const url = `/?handler=ProductsByCategory&category=${encodeURIComponent(currentCategory)}&search=${encodeURIComponent(currentSearch)}&page=${currentPage}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                const data = await response.json();
+
+                container.innerHTML = '';
+
+                if (!data.products || data.products.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12 text-center">
+                            <div style="color:#8c1007;font-size:1.5rem;margin:3rem 0;">
+                                <i class="fas fa-search" style="font-size:3rem;margin-bottom:1rem;"></i>
+                                <p>No products found${currentSearch ? ` for "${currentSearch}"` : ''}</p>
+                            </div>
+                        </div>`;
+                    paginationContainer.style.display = 'none';
+                } else {
+                    data.products.forEach(product => {
+                        const productCard = createProductCard(product);
+                        container.appendChild(productCard);
+                    });
+                    updatePagination(data.totalPages, data.currentPage, data.showPagination);
+                }
+
+                initializeCardEvents();
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = `
+                    <div class="col-12 text-center">
+                        <div style="color:#8c1007;font-size:1.5rem;margin:3rem 0;">
+                            <i class="fas fa-exclamation-triangle" style="font-size:3rem;margin-bottom:1rem;"></i>
+                            <p>Error loading products. Please try again.</p>
+                        </div>
+                    </div>`;
+                document.getElementById('pagination-container').style.display = 'none';
+            } finally {
+                loading.style.display = 'none';
+                container.style.opacity = '1';
+            }
+        }
+
+        // Update pagination
+        function updatePagination(totalPages, currentPageNum, showPagination) {
+            const paginationContainer = document.getElementById('pagination-container');
+            const paginationList = document.getElementById('pagination-list');
+
+            currentPage = currentPageNum;
+
+            if (currentCategory === 'all' || !showPagination || totalPages <= 1) {
+                paginationContainer.style.display = 'none';
+                return;
+            }
+
+            paginationContainer.style.display = 'block';
+            paginationList.innerHTML = '';
+
+            // Prev
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPageNum === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link pagination-btn" href="#">&lt;</a>`;
+            if (currentPageNum > 1) prevLi.querySelector('a').addEventListener('click', async e => { e.preventDefault(); currentPage = currentPageNum - 1; await loadProducts(); });
+            paginationList.appendChild(prevLi);
+
+            // Pages
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${i === currentPageNum ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link pagination-btn" href="#">${i}</a>`;
+                if (i !== currentPageNum) li.querySelector('a').addEventListener('click', async e => { e.preventDefault(); currentPage = i; await loadProducts(); });
+                paginationList.appendChild(li);
+            }
+
+            // Next
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPageNum === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link pagination-btn" href="#">&gt;</a>`;
+            if (currentPageNum < totalPages) nextLi.querySelector('a').addEventListener('click', async e => { e.preventDefault(); currentPage = currentPageNum + 1; await loadProducts(); });
+            paginationList.appendChild(nextLi);
+        }
+
+        // Create product card element (unique product, size dropdown, dynamic price)
+        function createProductCard(product) {
+            const col = document.createElement('div');
+            col.className = 'col-xl-3 col-lg-4 col-md-6 mb-4';
+
+            const imageHtml = product.image
+                ? `<img src="/images/products/${product.image}" alt="${product.itemName}" style="width:160px;height:160px;border-radius:50%;object-fit:cover;margin:0 auto;display:block;background:transparent;" />`
+                : `<div style="width:160px;height:160px;border-radius:50%;background:transparent;margin:0 auto;"></div>`;
+
+            const sizesHtml = product.sizes.map(size =>
+                `<option value="${size.sizeId}" data-price="${size.price}">${size.sizeName} - &#x20B1;${Number(size.price).toFixed(2)}</option>`
+            ).join('');
+
+            col.innerHTML = `
+                <div class="product-card" style="background:#8c1007;border-radius:20px;color:white;padding:1.5rem 1rem;text-align:center;box-shadow:0 8px 25px rgba(140,16,7,0.4);height:100%;transition:all 0.3s ease;position:relative;overflow:hidden;">
+                    <div class="product-image mb-2" style="position:relative;z-index:2;">${imageHtml}</div>
+                    <h4 style="font-weight:800;font-size:1.3rem;margin-bottom:0.5rem;color:white;position:relative;z-index:2;">${product.itemName}</h4>
+                    <p style="color:#FFF8DC;font-size:0.9rem;line-height:1.3;margin-bottom:1rem;min-height:2.5rem;position:relative;z-index:2;font-weight:400;">${getProductDescription(product.itemName)}</p>
+                    <div class="product-price" style="font-size:1.8rem;font-weight:900;margin-bottom:1rem;color:#FFD700;text-shadow:2px 2px 4px rgba(0,0,0,0.3);position:relative;z-index:2;">&#8369;${Number(product.price).toFixed(2)}</div>
+                    <div class="product-controls" style="position:relative;z-index:2;">
+                        <div class="controls-row" style="display:grid;grid-template-columns:80px 1fr 50px;gap:10px;align-items:end;max-width:360px;margin:0 auto;">
+                            <div class="control-group" style="text-align:left;">
+                                <label style="font-weight:700;font-size:0.8rem;color:#FFD700;display:block;margin-bottom:4px;">QTY</label>
+                                <select class="form-select qty-select" style="width:100%;height:40px;border-radius:8px;border:2px solid #FFF8DC;font-weight:600;text-align:center;font-size:0.85rem;">
+                                    ${Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="control-group" style="text-align:left;">
+                                <label style="font-weight:700;font-size:0.8rem;color:#FFD700;display:block;margin-bottom:4px;">SIZE</label>
+                                <select class="form-select size-select" style="width:100%;height:40px;border-radius:8px;border:2px solid #FFF8DC;font-weight:600;text-align:center;font-size:0.8rem;">
+                                    ${sizesHtml}
+                                </select>
+                            </div>
+                            <button class="add-to-cart-btn" style="background:#FFF8DC;color:#8c1007;border:none;border-radius:12px;width:50px;height:50px;font-size:1.1rem;transition:all 0.3s ease;box-shadow:0 3px 10px rgba(0,0,0,0.2);font-weight:800;display:flex;align-items:center;justify-content:center;" data-product-id="${product.menuItemId}">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+
+            // Set/change price on size change
+            const sizeSelect = col.querySelector('.size-select');
+            const priceDisplay = col.querySelector('.product-price');
+            if (sizeSelect && priceDisplay) {
+                const apply = () => {
+                    const opt = sizeSelect.options[sizeSelect.selectedIndex];
+                    const p = parseFloat(opt.dataset.price);
+                    if (!isNaN(p)) priceDisplay.textContent = `&#8369;${p.toFixed(2)}`;
+                };
+                sizeSelect.addEventListener('change', apply);
+                // initialize to first size price
+                apply();
+            }
+
+            return col;
+        }
+
+        function getProductDescription(itemName) {
+            const descriptions = {
+                "Hawaiian": "Ham & Pineapple",
+                "Meat Lovers": "Pepperoni, sausage, bacon, ham and cheese",
+                "BBQ Chicken": "Spicy barbecue sauce, diced chicken, peppers, onion, and cilantro",
+                "Spinach & Feta": "Red onion, spinach, feta cheese and mushrooms",
+                "Margherita": "Fresh mozzarella, tomatoes, and basil",
+                "Pepperoni": "Classic pepperoni with mozzarella cheese",
+                "Veggie Supreme": "Bell peppers, mushrooms, onions, olives, and tomatoes",
+                "Four Cheese": "Mozzarella, cheddar, parmesan, and provolone",
+                "Chicken Wings": "Crispy chicken wings with your choice of sauce",
+                "Garlic Bread": "Fresh baked bread with garlic butter",
+                "Caesar Salad": "Fresh romaine lettuce with caesar dressing",
+                "Coca Cola": "Classic refreshing cola drink",
+                "Sprite": "Lemon-lime flavored soft drink",
+                "Orange Juice": "Fresh squeezed orange juice"
+            };
+            return descriptions[itemName] || "Delicious item made with fresh ingredients";
+        }
+
+        function initializeCardEvents() {
+            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.dataset.productId;
+                    const card = this.closest('.product-card');
+                    const qty = card.querySelector('.qty-select').value;
+                    const sizeSelect = card.querySelector('.size-select');
+                    const selected = sizeSelect.options[sizeSelect.selectedIndex];
+                    const sizeId = selected.value;
+                    const price = selected.dataset.price;
+
+                    this.style.transform = 'scale(0.9)';
+                    this.innerHTML = '<i class="fas fa-check"></i>';
+                    this.style.background = '#28a745';
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1)';
+                        this.innerHTML = '<i class="fas fa-shopping-cart"></i>';
+                        this.style.background = '#FFF8DC';
+                    }, 1200);
+
+                    console.log(`Added to cart: Product ${productId}, Qty: ${qty}, SizeId: ${sizeId}, Price: &#8369;${price}`);
+                });
+            });
+
+            // Hover effects remain unchanged
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const allButton = document.querySelector('[data-category="all"]');
+            if (allButton) {
+                allButton.classList.add('active');
+                allButton.style.transform = 'scale(1.1)';
+                allButton.style.boxShadow = '0 8px 25px rgba(140,16,7,0.6)';
+            }
+            const paginationContainer = document.getElementById('pagination-container');
+            if (paginationContainer) paginationContainer.style.display = 'none';
+            initializeCardEvents();
+        });
+    </script>
+}

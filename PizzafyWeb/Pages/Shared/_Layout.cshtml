@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Pizzafy</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/PizzafyWeb.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+</head>
+<body>
+    <header class="pizzafy-header position-fixed w-100 top-0 start-0" style="z-index: 1050;">
+        <nav class="navbar navbar-expand-lg">
+            <div class="container-fluid px-4">
+                <!-- Logo and Brand -->
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-page="/Index">
+                    <div class="header-logo-container">
+                        <img src="~/images/logoWhiteOutline.png" alt="Pizzafy Logo" class="header-logo-image" />
+                    </div>
+                    <span class="brand-text ms-3">Pizzafy</span>
+                </a>
+                
+                <!-- Mobile Toggle Button -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <!-- Navigation Menu -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <!-- Center Navigation -->
+                    <ul class="navbar-nav mx-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-page="/Index">HOME</a>
+                        </li>
+                        <li class="nav-item">
+                            @if (User.Identity!.IsAuthenticated)
+                            {
+                                <a class="nav-link menu-nav-link" href="#menu-section">MENU</a>
+                            }
+                            else
+                            {
+                                <a class="nav-link" asp-area="" asp-page="/Login">MENU</a>
+                            }
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-page="/About">ABOUT</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-page="/Contact">CONTACT</a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Right Side Icons -->
+                    <ul class="navbar-nav">
+                        @if (User.Identity!.IsAuthenticated)
+                        {
+                            <!-- Orders Icon -->
+                            <li class="nav-item">
+                                <a class="nav-link nav-icon" asp-area="" asp-page="/Orders" title="My Orders">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </a>
+                            </li>
+                            
+                            <!-- Shopping Cart Icon -->
+                            <li class="nav-item">
+                                <a class="nav-link nav-icon" asp-area="" asp-page="/Cart" title="Shopping Cart">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </a>
+                            </li>
+                            
+                            <!-- User Profile Dropdown -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link nav-icon dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Profile">
+                                    <i class="fas fa-user"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li>
+                                        <span class="dropdown-item-text">
+                                            <strong>@User.Identity.Name</strong>
+                                        </span>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-page="/Profile"><i class="fas fa-user-edit me-2"></i>My Profile</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-page="/Orders"><i class="fas fa-history me-2"></i>Order History</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="/Admin/MenuManagement"><i class="fas fa-cog me-2"></i>Admin Panel</a></li>
+                                    }
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" asp-area="" asp-page="/Logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <!-- Login Icon for Non-Authenticated Users -->
+                            <li class="nav-item">
+                                <a class="nav-link nav-icon" asp-area="" asp-page="/Login" title="Login">
+                                    <i class="fas fa-user"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main style="padding-top: 90px;">
+        @RenderBody()
+    </main>
+
+    <footer class="pizzafy-footer mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="footer-brand">
+                        <img src="~/images/pizza-slice.svg" alt="Pizzafy Logo" class="footer-logo" />
+                        <span class="ms-2">Pizzafy</span>
+                    </div>
+                    <p class="footer-tagline">Where every bite tastes like home</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>&copy; 2025 Pizzafy. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+    @if (TempData["SuccessMessage"] != null && Context.Request.Query["success"].Count > 0)
+    {
+        <div class="alert alert-success position-fixed top-0 end-0 m-4 fade show" style="z-index:9999; min-width:300px;">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <script>
+        // Menu navigation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuNavLink = document.querySelector('.menu-nav-link');
+            
+            if (menuNavLink) {
+                menuNavLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Check if we're on the index page
+                    if (window.location.pathname === '/' || window.location.pathname === '/Index') {
+                        // Scroll to menu section
+                        const menuSection = document.querySelector('.menu-category-section');
+                        if (menuSection) {
+                            // Calculate offset for fixed header
+                            const headerHeight = 90;
+                            const targetPosition = menuSection.offsetTop - headerHeight;
+                            
+                            window.scrollTo({
+                                top: targetPosition,
+                                behavior: 'smooth'
+                            });
+                        }
+                    } else {
+                        // Redirect to index page with hash for menu section
+                        window.location.href = '/#menu-section';
+                    }
+                });
+            }
+            
+            // Handle direct access to /#menu-section
+            if (window.location.hash === '#menu-section') {
+                setTimeout(() => {
+                    const menuSection = document.querySelector('.menu-category-section');
+                    if (menuSection) {
+                        const headerHeight = 90;
+                        const targetPosition = menuSection.offsetTop - headerHeight;
+                        
+                        window.scrollTo({
+                            top: targetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html></html>

@@ -1,0 +1,336 @@
+@page
+@model PizzafyWeb.Pages.LoginModel
+@{
+    ViewData["Title"] = "Login - Pizzafy";
+    Layout = null; // Use no layout for a standalone login page
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #3e0703;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .login-container {
+            background: #f5f5dc;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .pizza-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pizza-icon a {
+            display: inline-block;
+        }
+
+        .pizza-icon img {
+            transition: transform 0.3s ease;
+        }
+
+        .pizza-icon a:hover img {
+            transform: rotate(15deg) scale(1.1);
+        }
+
+        .brand-title {
+            color: #d2691e;
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            font-family: 'Georgia', serif;
+            transition: color 0.3s ease;
+        }
+
+        a .brand-title:hover {
+            color: #b8581a;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group p {
+            margin: 0 0 5px 0;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 12px;
+            color: #999;
+            font-size: 16px;
+            z-index: 1;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            background: #fff;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #d2691e;
+            box-shadow: 0 0 5px rgba(210, 105, 30, 0.3);
+        }
+
+        .form-input:focus + .input-icon {
+            color: #d2691e;
+        }
+
+        .remember-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .remember-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .signup-link {
+            color: #d2691e;
+            text-decoration: none;
+        }
+
+        .signup-link:hover {
+            text-decoration: underline;
+        }
+
+        .login-button {
+            background: #8b0000;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .login-button:hover {
+            background: #660000;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .validation-summary {
+            color: #d32f2f;
+            background: #ffebee;
+            border: 1px solid #ffcdd2;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* Mobile Responsive Styles */
+        @@media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .login-container {
+                padding: 30px 25px;
+                border-radius: 10px;
+            }
+
+            .brand-title {
+                font-size: 28px;
+                margin-bottom: 25px;
+            }
+
+            .pizza-icon {
+                font-size: 40px;
+                margin-bottom: 8px;
+            }
+
+            .pizza-icon img {
+                width: 40px !important;
+                height: 40px !important;
+            }
+
+            .form-input {
+                padding: 14px 15px 14px 40px;
+                font-size: 16px;
+            }
+
+            .login-button {
+                padding: 14px 40px;
+                font-size: 16px;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .login-container {
+                padding: 25px 20px;
+                border-radius: 8px;
+            }
+
+            .brand-title {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            .pizza-icon {
+                font-size: 36px;
+                margin-bottom: 5px;
+            }
+
+            .pizza-icon img {
+                width: 36px !important;
+                height: 36px !important;
+            }
+
+            .form-group p {
+                font-size: 13px;
+            }
+
+            .form-input {
+                padding: 12px 15px 12px 35px;
+                font-size: 16px;
+            }
+
+            .input-icon {
+                left: 10px;
+                font-size: 14px;
+            }
+
+            .login-button {
+                padding: 12px 30px;
+                font-size: 16px;
+            }
+
+            .remember-section {
+                font-size: 13px;
+                margin: 15px 0;
+            }
+        }
+
+        @@media (max-width: 360px) {
+            .login-container {
+                padding: 20px 15px;
+            }
+
+            .brand-title {
+                font-size: 22px;
+            }
+
+            .form-input {
+                padding: 10px 12px 10px 32px;
+            }
+
+            .input-icon {
+                left: 8px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="pizza-icon">
+            <a href="/" style="text-decoration: none; color: inherit;">
+                <img src="~/images/logo.png" alt="Pizzafy Logo" style="width: 48px; height: 48px; cursor: pointer;" />
+            </a>
+        </div>
+        <a href="/" style="text-decoration: none; color: inherit;">
+            <h1 class="brand-title">Pizzafy</h1>
+        </a>
+        
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="validation-summary">
+                <div asp-validation-summary="All"></div>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="error-message">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <form method="post">
+            <div class="form-group">
+                <p>Username</p>
+                <div class="input-container">
+                    <input asp-for="Login.Username" class="form-input" placeholder="Enter your username" />
+                    <i class="fas fa-user input-icon"></i>
+                </div>
+                <span asp-validation-for="Login.Username" class="error-message"></span>
+            </div>
+
+            <div class="form-group">
+                <p>Password</p>
+                <div class="input-container">
+                    <input asp-for="Login.Password" class="form-input" placeholder="Enter your password" type="password" />
+                    <i class="fas fa-lock input-icon"></i>
+                </div>
+                <span asp-validation-for="Login.Password" class="error-message"></span>
+            </div>
+
+            <button type="submit" class="login-button">LOGIN</button>
+
+            <div class="remember-section">
+                <div>
+                    Don't have an account? <a href="/Register" class="signup-link">Sign Up</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

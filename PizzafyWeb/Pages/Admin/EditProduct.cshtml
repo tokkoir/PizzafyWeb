@@ -1,0 +1,238 @@
+@page
+@model PizzafyWeb.Pages.Admin.EditProductModel
+@using PizzafyWeb.Models
+@{
+    ViewData["Title"] = "Edit Product - Admin";
+    Layout = "_AdminLayout";
+}
+
+<div class="admin-content">
+    <div class="admin-header">
+        <h1 class="page-title">Edit Product</h1>
+    </div>
+    <div class="add-product-container">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="product-form-card">
+                    <form method="post" enctype="multipart/form-data">
+                        <div class="form-section">
+                            <div class="table-header-style">
+                                <h3 class="section-title">Product Information</h3>
+                            </div>
+                            <div class="form-content">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="ProductName" class="form-label">Product Name *</label>
+                                            <input asp-for="ProductName" class="form-control" placeholder="Enter product name" />
+                                            <span asp-validation-for="ProductName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="CategoryId" class="form-label">Category *</label>
+                                            <select asp-for="CategoryId" class="form-select" id="categorySelect">
+                                                <option value="0">Select a category</option>
+                                                @foreach (var category in Model.Categories)
+                                                {
+                                                    <option value="@category.CategoryId" data-category-name="@category.CategoryName" selected="@(category.CategoryId == Model.CategoryId)">@category.CategoryName</option>
+                                                }
+                                            </select>
+                                            <span asp-validation-for="CategoryId" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label asp-for="ImageFile" class="form-label">Product Image</label>
+                                    <div class="image-upload-container">
+                                        <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" id="imageInput" />
+                                        <div class="image-preview" id="imagePreview">
+                                            @if (!string.IsNullOrEmpty(Model.ExistingImage))
+                                            {
+                                                <img src="/images/products/@Model.ExistingImage" alt="Current Image" />
+                                            }
+                                            else
+                                            {
+                                                <i class="fas fa-image"></i>
+                                                <span>No image selected</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <span asp-validation-for="ImageFile" class="text-danger"></span>
+                                    <small class="form-text text-muted">Supported formats: JPG, PNG, GIF (Max: 5MB)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-section">
+                            <div class="table-header-style">
+                                <h3 class="section-title">Size & Price</h3>
+                            </div>
+                            <div class="form-content">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="SelectedSizeId" class="form-label">Size *</label>
+                                            <select asp-for="SelectedSizeId" class="form-select" id="sizeSelect">
+                                                <option value="">Select a size</option>
+                                                @foreach (var size in Model.AvailableSizes)
+                                                {
+                                                    <option value="@size.SizeId" selected="@(size.SizeId == Model.SelectedSizeId)">@size.SizeName</option>
+                                                }
+                                            </select>
+                                            <span asp-validation-for="SelectedSizeId" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="Price" class="form-label">Price *</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">P</span>
+                                                <input asp-for="Price" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                                            </div>
+                                            <span asp-validation-for="Price" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                            <a href="/Admin/MenuManagement" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="preview-card">
+                    <h3 class="preview-title">Product Preview</h3>
+                    <div class="product-preview">
+                        <div class="preview-image" id="previewImage">
+                            @if (!string.IsNullOrEmpty(Model.ExistingImage))
+                            {
+                                <img src="/images/products/@Model.ExistingImage" alt="Current Image" />
+                            }
+                            else
+                            {
+                                <i class="fas fa-image"></i>
+                                <span>No image</span>
+                            }
+                        </div>
+                        <div class="preview-info">
+                            <h4 class="preview-name" id="previewName">@Model.ProductName</h4>
+                            <span class="preview-category" id="previewCategory">@Model.SelectedCategoryName</span>
+                            <div class="preview-price" id="previewPrices">
+                                @if (Model.Price > 0 && Model.SelectedSizeId > 0)
+                                {
+                                    var sizeLabel = Model.AvailableSizes.FirstOrDefault(s => s.SizeId == Model.SelectedSizeId)?.SizeName ?? "";
+                                    <div class="price-item-preview">@sizeLabel: P@Model.Price.ToString("F2")</div>
+                                }
+                                else
+                                {
+                                    <span class="no-price">No price set</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success mt-3">@TempData["SuccessMessage"]</div>
+}
+@section Scripts {
+    <script>
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('imagePreview');
+            const previewImage = document.getElementById('previewImage');
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview" />`;
+                    previewImage.innerHTML = `<img src="${e.target.result}" alt="Preview" />`;
+                }
+                reader.readAsDataURL(file);
+            } else {
+                preview.innerHTML = '<i class="fas fa-image"></i><span>No image selected</span>';
+                previewImage.innerHTML = '<i class="fas fa-image"></i><span>No image</span>';
+            }
+        });
+        document.querySelector('input[name="ProductName"]').addEventListener('input', function() {
+            document.getElementById('previewName').textContent = this.value || 'Product Name';
+        });
+        document.querySelector('select[name="CategoryId"]').addEventListener('change', async function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const categoryName = selectedOption.getAttribute('data-category-name') || selectedOption.text;
+            document.getElementById('previewCategory').textContent = categoryName || 'Category';
+            const imageInput = document.getElementById('imageInput');
+            if (!imageInput.files.length) {
+                const previewImage = document.getElementById('previewImage');
+                previewImage.innerHTML = '<i class="fas fa-image"></i><span>No image</span>';
+            }
+            if (this.value && this.value !== '0') {
+                await loadSizesForCategory(this.value);
+            } else {
+                const sizeSelect = document.getElementById('sizeSelect');
+                sizeSelect.innerHTML = '<option value="">Select a size</option>';
+            }
+            updatePreview();
+        });
+        async function loadSizesForCategory(categoryId) {
+            try {
+                const response = await fetch(`/Admin/EditProduct?handler=Sizes&categoryId=${categoryId}`);
+                const sizes = await response.json();
+                const sizeSelect = document.getElementById('sizeSelect');
+                sizeSelect.innerHTML = '<option value="">Select a size</option>';
+                sizes.forEach(size => {
+                    const option = document.createElement('option');
+                    option.value = size.sizeId;
+                    option.textContent = size.sizeName;
+                    sizeSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading sizes:', error);
+                const sizeSelect = document.getElementById('sizeSelect');
+                sizeSelect.innerHTML = '<option value="">Error loading sizes</option>';
+            }
+        }
+        function updatePreview() {
+            const previewPrices = document.getElementById('previewPrices');
+            const sizeSelect = document.getElementById('sizeSelect');
+            const priceInput = document.querySelector('input[name="Price"]');
+            if (sizeSelect.value && priceInput.value && parseFloat(priceInput.value) > 0) {
+                const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
+                const sizeLabel = selectedOption.textContent;
+                const price = parseFloat(priceInput.value).toFixed(2);
+                previewPrices.innerHTML = `<div class="price-item-preview">${sizeLabel}: P${price}</div>`;
+            } else {
+                previewPrices.innerHTML = '<span class="no-prices">No price set</span>';
+            }
+        }
+        document.getElementById('sizeSelect').addEventListener('change', updatePreview);
+        document.querySelector('input[name="Price"]').addEventListener('input', updatePreview);
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const sizeSelect = document.getElementById('sizeSelect');
+            const priceInput = document.querySelector('input[name="Price"]');
+            if (!sizeSelect.value) {
+                e.preventDefault();
+                alert('Please select a size.');
+                return false;
+            }
+            if (!priceInput.value || parseFloat(priceInput.value) <= 0) {
+                e.preventDefault();
+                alert('Please enter a valid price.');
+                return false;
+            }
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePreview();
+        });
+    </script>
+}
