@@ -34,5 +34,9 @@ namespace PizzafyWeb.Models
         [DataType(DataType.Password)]
         [Compare("Password", ErrorMessage = "Passwords do not match")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        // New: Requested role selection. Default to Customer.
+        [Required]
+        public UserType RequestedRole { get; set; } = UserType.Customer;
     }
 }

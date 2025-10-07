@@ -24,6 +24,7 @@ namespace PizzafyWeb.Services
                 await _context.Database.EnsureCreatedAsync();
 
                 // Align schema changes that might not be migrated yet
+                await EnsureUserSchemaAsync();
                 await EnsureOrderDetailSchemaAsync();
                 await EnsurePaymentSchemaAsync();
 
@@ -101,6 +102,7 @@ namespace PizzafyWeb.Services
                             LastName = "User",
                             Password = HashPassword("admin123"), // Hash the password
                             UserType = UserType.Admin,
+                            AccountStatus = AccountStatus.Active,
                             CreatedAt = DateTime.Now,
                             PhoneNumber = "123-456-7890",
                             Address = "Admin Office, Company Building"
@@ -112,6 +114,7 @@ namespace PizzafyWeb.Services
                             LastName = "Doe",
                             Password = HashPassword("customer123"), // Hash the password
                             UserType = UserType.Customer,
+                            AccountStatus = AccountStatus.Active,
                             CreatedAt = DateTime.Now,
                             PhoneNumber = "123-456-7890",
                             Address = "123 Main St, City, State"
@@ -330,7 +333,7 @@ namespace PizzafyWeb.Services
                 }
 
                 // Ensure orders.payment_id column exists
-                cmd.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'orders' AND column_name = 'payment_id'";
+                cmd.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'orders' AND column_name = 'payment_id'.";
                 var paymentIdColExists = Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
                 if (!paymentIdColExists)
                 {
@@ -401,6 +404,37 @@ namespace PizzafyWeb.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Schema alignment for order_detail failed: {ex.Message}");
+            }
+            finally
+            {
+                await _context.Database.CloseConnectionAsync();
+            }
+        }
+
+        private async Task EnsureUserSchemaAsync()
+        {
+            try
+            {
+                await _context.Database.OpenConnectionAsync();
+                using var cmd = _context.Database.GetDbConnection().CreateCommand();
+
+                // Ensure account_status column exists on user table
+                cmd.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'user' AND column_name = 'account_status'";
+                var hasAccountStatus = Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+                if (!hasAccountStatus)
+                {
+                    // Add column with default pending for safety; we'll activate existing users below
+                    cmd.CommandText = "ALTER TABLE `user` ADD COLUMN account_status VARCHAR(20) NOT NULL DEFAULT 'pending'";
+                    await cmd.ExecuteNonQueryAsync();
+
+                    // Set all existing users to active so current users are not blocked
+                    cmd.CommandText = "UPDATE `user` SET account_status = 'active'";
+                    try { await cmd.ExecuteNonQueryAsync(); } catch { /* ignore */ }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Schema alignment for user failed: {ex.Message}");
             }
             finally
             {

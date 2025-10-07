@@ -90,6 +90,12 @@
                                 <span>Orders</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="/Admin/UserApprovals" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/UserApprovals" ? "active" : "")">
+                                <i class="fas fa-user-check"></i>
+                                <span>User Approvals</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>

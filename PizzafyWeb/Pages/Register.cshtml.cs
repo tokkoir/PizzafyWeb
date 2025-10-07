@@ -22,7 +22,6 @@ namespace PizzafyWeb.Pages
 
         public void OnGet()
         {
-            // Check if user is already logged in
             if (User.Identity!.IsAuthenticated)
             {
                 Response.Redirect("/");
@@ -36,7 +35,6 @@ namespace PizzafyWeb.Pages
                 return Page();
             }
 
-            // Additional validation for password confirmation
             if (Register.Password != Register.ConfirmPassword)
             {
                 ModelState.AddModelError("Register.ConfirmPassword", "Passwords do not match");
@@ -45,7 +43,6 @@ namespace PizzafyWeb.Pages
 
             try
             {
-                // Check if username already exists
                 var existingUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.Username == Register.Username);
 
@@ -55,10 +52,12 @@ namespace PizzafyWeb.Pages
                     return Page();
                 }
 
-                // Hash the password
                 var hashedPassword = HashPassword(Register.Password);
 
-                // Create new user
+                var requestedRole = Register.RequestedRole;
+                var userType = requestedRole == UserType.Admin ? UserType.Admin : UserType.Customer;
+                var status = requestedRole == UserType.Admin ? AccountStatus.Pending : AccountStatus.Active;
+
                 var newUser = new User
                 {
                     Username = Register.Username,
@@ -68,19 +67,27 @@ namespace PizzafyWeb.Pages
                     PhoneNumber = Register.PhoneNumber,
                     Address = Register.Address,
                     CreatedAt = DateTime.Now,
-                    UserType = UserType.Customer
+                    UserType = userType,
+                    AccountStatus = status
                 };
 
                 _context.Users.Add(newUser);
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "Account created successfully! Please login with your credentials.";
+                if (requestedRole == UserType.Admin)
+                {
+                    TempData["SuccessMessage"] = "Your admin registration request was submitted and is pending approval by an administrator.";
+                }
+                else
+                {
+                    TempData["SuccessMessage"] = "Account created successfully! Please login with your credentials.";
+                }
+
                 return RedirectToPage("/Login");
             }
             catch (Exception)
             {
                 TempData["ErrorMessage"] = "An error occurred while creating your account. Please try again.";
-                // Log the exception here if you have logging configured
                 return Page();
             }
         }

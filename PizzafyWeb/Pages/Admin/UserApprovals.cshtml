@@ -1,0 +1,82 @@
+@page
+@model PizzafyWeb.Pages.Admin.UserApprovalsModel
+@{
+    Layout = "/Pages/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "User Approvals";
+}
+
+<section class="container-fluid py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="mb-0" style="color:#8c1007;font-weight:800;letter-spacing:1px;">Pending Admin Approvals</h2>
+        <a class="btn btn-outline-secondary" href="/Admin/Dashboard"><i class="fas fa-arrow-left me-2"></i>Back to Dashboard</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card">
+        <div class="card-header" style="background:#8c1007;color:white;">
+            <i class="fas fa-user-shield me-2"></i>Pending Admin Accounts
+        </div>
+        <div class="card-body p-0">
+            @if (Model.PendingAdmins.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Username</th>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Created</th>
+                                <th class="text-center text-nowrap" style="width: 200px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var u in Model.PendingAdmins)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge text-bg-warning">admin</span>
+                                            <span>@u.Username</span>
+                                        </div>
+                                    </td>
+                                    <td>@u.FirstName @u.LastName</td>
+                                    <td>@u.PhoneNumber</td>
+                                    <td>@u.Address</td>
+                                    <td>@u.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                    <td class="text-center text-nowrap">
+                                        <form method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@u.UserId" />
+                                            <button type="submit" formaction="?handler=Approve" class="btn btn-success btn-sm me-1">
+                                                <i class="fas fa-check me-1"></i>Approve
+                                            </button>
+                                        </form>
+                                        <form method="post" class="d-inline" onsubmit="return confirm('Decline this account? It will be disabled.');">
+                                            <input type="hidden" name="id" value="@u.UserId" />
+                                            <button type="submit" formaction="?handler=Decline" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-times me-1"></i>Decline
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="p-4 text-center text-muted">No pending admin accounts.</div>
+            }
+        </div>
+    </div>
+</section>

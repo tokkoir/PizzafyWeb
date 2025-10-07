@@ -34,6 +34,12 @@ namespace PizzafyWeb.Data
                     .HasConversion(
                         v => v.ToString().ToLower(),
                         v => (UserType)Enum.Parse(typeof(UserType), v, true));
+
+                entity.Property(e => e.AccountStatus)
+                    .HasConversion(
+                        v => v.ToString().ToLower(),
+                        v => (AccountStatus)Enum.Parse(typeof(AccountStatus), v, true))
+                    .HasDefaultValue(AccountStatus.Active);
             });
 
             // Configure Category entity

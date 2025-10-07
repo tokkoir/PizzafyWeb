@@ -643,6 +643,20 @@
                 <span asp-validation-for="Register.ConfirmPassword" class="error-message"></span>
             </div>
 
+            <!-- Requested Role -->
+            <div class="form-group full-width">
+                <p>Registering As *</p>
+                <div class="input-container">
+                    <select asp-for="Register.RequestedRole"
+                            class="form-input"
+                            asp-items="Html.GetEnumSelectList<PizzafyWeb.Models.UserType>()"
+                            required>
+                    </select>
+                    <i class="fas fa-user-shield input-icon"></i>
+                </div>
+                <span asp-validation-for="Register.RequestedRole" class="error-message"></span>
+            </div>
+
             <button type="submit" class="create-button">REGISTER</button>
         </form>
 
@@ -670,7 +684,7 @@
                 }
             });
 
-            // Real-time validation for all required fields
+            // Real-time validation for all required fields (inputs and selects)
             $('input[required]').on('blur', function() {
                 if (!$(this).val().trim()) {
                     $(this).addClass('is-invalid');
@@ -678,8 +692,15 @@
                     $(this).removeClass('is-invalid');
                 }
             });
+            $('select[required]').on('blur change', function() {
+                if (!$(this).val()) {
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
 
-            // Phone number format validation
+            // Phone number format validation (unchanged from before)
             $('input[name="Register.PhoneNumber"]').on('blur', function() {
                 var phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
                 var phoneValue = $(this).val().trim();
@@ -698,6 +719,14 @@
                 // Check all required fields
                 $('input[required]').each(function() {
                     if (!$(this).val().trim()) {
+                        isValid = false;
+                        $(this).addClass('is-invalid');
+                    } else {
+                        $(this).removeClass('is-invalid');
+                    }
+                });
+                $('select[required]').each(function() {
+                    if (!$(this).val()) {
                         isValid = false;
                         $(this).addClass('is-invalid');
                     } else {

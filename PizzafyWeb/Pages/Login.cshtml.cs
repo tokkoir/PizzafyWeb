@@ -54,6 +54,18 @@ namespace PizzafyWeb.Pages
                     return Page();
                 }
 
+                if (user.AccountStatus == AccountStatus.Pending)
+                {
+                    TempData["ErrorMessage"] = "Your account is pending approval. Please wait for an administrator to approve your account.";
+                    return Page();
+                }
+
+                if (user.AccountStatus == AccountStatus.Disabled)
+                {
+                    TempData["ErrorMessage"] = "Your account has been disabled. Please contact support.";
+                    return Page();
+                }
+
                 // Create claims for the authenticated user
                 var claims = new List<Claim>
                 {
