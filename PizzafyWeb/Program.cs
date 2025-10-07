@@ -104,4 +104,17 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 
+// Minimal API for cart count
+app.MapGet("/api/cart/count", async (HttpContext http, PizzafyWeb.Data.PizzafyDbContext db) =>
+{
+    if (!http.User.Identity?.IsAuthenticated ?? true)
+        return Results.Json(new { count = 0 });
+
+    var userIdClaim = http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userIdClaim)) return Results.Json(new { count = 0 });
+    var userId = int.Parse(userIdClaim);
+    var count = await db.Carts.Where(c => c.UserId == userId).SumAsync(c => (int?)c.Quantity) ?? 0;
+    return Results.Json(new { count });
+});
+
 app.Run();

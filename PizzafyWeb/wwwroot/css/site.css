@@ -792,3 +792,17 @@ main > .alert {
     justify-content: center;
     align-items: center;
 }
+
+/* Fixed footer specifically for cart page */
+body.cart-page .pizzafy-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1030;
+}
+
+/* Ensure content doesn't hide behind footer on cart page */
+body.cart-page #main-content {
+    padding-bottom: 120px; /* footer height allowance */
+}

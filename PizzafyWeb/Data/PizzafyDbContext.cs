@@ -14,6 +14,7 @@ namespace PizzafyWeb.Data
         public DbSet<Size> Sizes { get; set; }
         public DbSet<MenuItem> MenuItems { get; set; }
         public DbSet<MenuPrice> MenuPrices { get; set; }
+        public DbSet<Cart> Carts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -85,6 +86,23 @@ namespace PizzafyWeb.Data
 
                 entity.Property(e => e.UnitPrice)
                     .HasColumnType("decimal(10,2)");
+            });
+
+            // Configure Cart entity
+            modelBuilder.Entity<Cart>(entity =>
+            {
+                entity.HasKey(e => e.CartId);
+                entity.Property(e => e.UnitPrice).HasColumnType("decimal(10,2)");
+
+                entity.HasOne(e => e.User)
+                      .WithMany()
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.MenuPrice)
+                      .WithMany()
+                      .HasForeignKey(e => e.PriceId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

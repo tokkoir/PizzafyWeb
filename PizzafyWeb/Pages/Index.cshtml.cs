@@ -21,6 +21,7 @@ namespace PizzafyWeb.Pages
         public int SizeId { get; set; }
         public string SizeName { get; set; } = "";
         public decimal Price { get; set; }
+        public int PriceId { get; set; }
     }
 
     public class IndexModel : PageModel
@@ -98,32 +99,31 @@ namespace PizzafyWeb.Pages
                     query = query.Where(m => m.ItemName.ToLower().Contains(s));
                 }
 
-                // MATERIALIZE and GROUP strictly by ItemName so the same product name appears once
                 var items = await query.ToListAsync();
 
+                // Group strictly by ItemName and unify sizes across all matching menu items.
                 var uniqueProducts = items
                     .GroupBy(m => m.ItemName)
-                    .Select(g => new
+                    .Select(g =>
                     {
-                        menuItemId = g.First().MenuItemId, // representative id
-                        itemName = g.Key,
-                        image = g.Select(x => x.Image).FirstOrDefault(img => !string.IsNullOrWhiteSpace(img)) ?? g.First().Image,
-                        categoryName = g.First().Category.CategoryName,
-                        sizes = g.SelectMany(m => m.MenuPrices)
-                                 .Select(mp => new { sizeId = mp.Size.SizeId, sizeName = mp.Size.SizeName, price = mp.UnitPrice })
-                                 .GroupBy(x => new { x.sizeId, x.sizeName }) // merge duplicate size entries, keep min price
-                                 .Select(gg => new { gg.Key.sizeId, gg.Key.sizeName, price = gg.Min(p => p.price) })
-                                 .OrderBy(x => x.price)
-                                 .ToList(),
-                    })
-                    .Select(p => new
-                    {
-                        p.menuItemId,
-                        p.itemName,
-                        p.image,
-                        p.categoryName,
-                        price = p.sizes.Min(s => s.price), // starting price (min across sizes)
-                        sizes = p.sizes
+                        var rep = g.First();
+                        // unify sizes: choose the entry per size with the lowest price, and keep its priceId
+                        var allSizes = g.SelectMany(m => m.MenuPrices)
+                            .Select(mp => new { priceId = mp.PriceId, sizeId = mp.Size.SizeId, sizeName = mp.Size.SizeName, price = mp.UnitPrice })
+                            .GroupBy(x => new { x.sizeId, x.sizeName })
+                            .Select(gg => gg.OrderBy(x => x.price).First())
+                            .OrderBy(x => x.price)
+                            .ToList();
+
+                        return new
+                        {
+                            menuItemId = rep.MenuItemId,
+                            itemName = rep.ItemName,
+                            image = g.Select(x => x.Image).FirstOrDefault(img => !string.IsNullOrWhiteSpace(img)) ?? rep.Image,
+                            categoryName = rep.Category.CategoryName,
+                            price = allSizes.Min(s => s.price),
+                            sizes = allSizes
+                        };
                     })
                     .ToList();
 
@@ -136,7 +136,6 @@ namespace PizzafyWeb.Pages
                 List<object> pageProducts;
                 if (category == "all")
                 {
-                    // No pagination for "all" category - return all unique products
                     pageProducts = uniqueProducts.Cast<object>().ToList();
                     showPagination = false;
                     totalPages = 1;
@@ -203,33 +202,36 @@ namespace PizzafyWeb.Pages
 
                 var items = await query.ToListAsync();
 
-                // Map them to view models - group strictly by ItemName to consolidate duplicates
+                // Map to view models - unify sizes across all menu items with the same ItemName
                 PizzaProducts = items
                     .GroupBy(m => m.ItemName)
-                    .Select(g => new PizzaProductViewModel
+                    .Select(g =>
                     {
-                        MenuItemId = g.First().MenuItemId, // Use first item's ID as representative
-                        ItemName = g.Key,
-                        Image = g.Select(x => x.Image).FirstOrDefault(img => !string.IsNullOrWhiteSpace(img)) ?? g.First().Image,
-                        Price = g.SelectMany(m => m.MenuPrices).Min(mp => mp.UnitPrice), // Starting price
-                        CategoryName = g.First().Category.CategoryName,
-                        Sizes = g.SelectMany(m => m.MenuPrices)
+                        var rep = g.First();
+                        var allSizes = g.SelectMany(m => m.MenuPrices)
                             .Select(mp => new SizePrice
                             {
                                 SizeId = mp.Size.SizeId,
                                 SizeName = mp.Size.SizeName,
-                                Price = mp.UnitPrice
+                                Price = mp.UnitPrice,
+                                PriceId = mp.PriceId
                             })
                             .GroupBy(s => new { s.SizeId, s.SizeName })
-                            .Select(gg => new SizePrice
-                            {
-                                SizeId = gg.Key.SizeId,
-                                SizeName = gg.Key.SizeName,
-                                Price = gg.Min(p => p.Price)
-                            })
+                            .Select(gg => gg.OrderBy(s => s.Price).First())
                             .OrderBy(s => s.Price)
-                            .ToList()
-                    }).ToList();
+                            .ToList();
+
+                        return new PizzaProductViewModel
+                        {
+                            MenuItemId = rep.MenuItemId,
+                            ItemName = rep.ItemName,
+                            Image = g.Select(x => x.Image).FirstOrDefault(img => !string.IsNullOrWhiteSpace(img)) ?? rep.Image,
+                            Price = allSizes.Min(s => s.Price),
+                            CategoryName = rep.Category.CategoryName,
+                            Sizes = allSizes
+                        };
+                    })
+                    .ToList();
 
                 // No pagination for "all" category on initial load
                 ShowPagination = false;

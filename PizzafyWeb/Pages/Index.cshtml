@@ -235,7 +235,7 @@ else
                 });
                 this.classList.add('active');
                 this.style.transform = 'scale(1.1)';
-                this.style.boxShadow = '0 8px 25px rgba(140,16,7,0.6)'
+                this.style.boxShadow = '0 8px 25px rgba(140,16,7,0.6)';
 
                 currentCategory = this.dataset.category;
                 currentPage = 1;
@@ -360,8 +360,8 @@ else
                 ? `<img src="/images/products/${product.image}" alt="${product.itemName}" style="width:160px;height:160px;border-radius:50%;object-fit:cover;margin:0 auto;display:block;background:transparent;" />`
                 : `<div style="width:160px;height:160px;border-radius:50%;background:transparent;margin:0 auto;"></div>`;
 
-            const sizesHtml = product.sizes.map(size =>
-                `<option value="${size.sizeId}" data-price="${size.price}">${size.sizeName} - &#x20B1;${Number(size.price).toFixed(2)}</option>`
+            const sizesHtml = (product.sizes || []).map(size =>
+                `<option value="${size.sizeId}" data-price="${size.price}" data-price-id="${size.priceId}">${size.sizeName}</option>`
             ).join('');
 
             col.innerHTML = `
@@ -371,20 +371,20 @@ else
                     <p style="color:#FFF8DC;font-size:0.9rem;line-height:1.3;margin-bottom:1rem;min-height:2.5rem;position:relative;z-index:2;font-weight:400;">${getProductDescription(product.itemName)}</p>
                     <div class="product-price" style="font-size:1.8rem;font-weight:900;margin-bottom:1rem;color:#FFD700;text-shadow:2px 2px 4px rgba(0,0,0,0.3);position:relative;z-index:2;">&#8369;${Number(product.price).toFixed(2)}</div>
                     <div class="product-controls" style="position:relative;z-index:2;">
-                        <div class="controls-row" style="display:grid;grid-template-columns:80px 1fr 50px;gap:10px;align-items:end;max-width:360px;margin:0 auto;">
+                        <div class="controls-row" style="display:grid;grid-template-columns:50px 1fr 50px;gap:5px;align-items:end;max-width:360px;margin:0 auto;">
                             <div class="control-group" style="text-align:left;">
-                                <label style="font-weight:700;font-size:0.8rem;color:#FFD700;display:block;margin-bottom:4px;">QTY</label>
-                                <select class="form-select qty-select" style="width:100%;height:40px;border-radius:8px;border:2px solid #FFF8DC;font-weight:600;text-align:center;font-size:0.85rem;">
+                                <label style="font-weight:700;font-size:0.75rem;color:#FFD700;display:block;margin-bottom:2px;">QTY</label>
+                                <select class="form-select qty-select" style="width:50px;height:44px;border-radius:8px;font-weight:600;text-align:center;font-size:0.85rem;padding:0 4px;margin:0;">
                                     ${Array.from({ length: 10 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
                                 </select>
                             </div>
-                            <div class="control-group" style="text-align:left;">
-                                <label style="font-weight:700;font-size:0.8rem;color:#FFD700;display:block;margin-bottom:4px;">SIZE</label>
-                                <select class="form-select size-select" style="width:100%;height:40px;border-radius:8px;border:2px solid #FFF8DC;font-weight:600;text-align:center;font-size:0.8rem;">
+                            <div class="control-group" style="text-align:center;">
+                                <label style="font-weight:700;font-size:0.75rem;color:#FFD700;display:block;margin-bottom:2px;">SIZE</label>
+                                <select class="form-select size-select" style="width:100%;height:44px;border-radius:8px;font-weight:600;text-align:center;font-size:0.8rem;padding:0 10px;margin:0;">
                                     ${sizesHtml}
                                 </select>
                             </div>
-                            <button class="add-to-cart-btn" style="background:#FFF8DC;color:#8c1007;border:none;border-radius:12px;width:50px;height:50px;font-size:1.1rem;transition:all 0.3s ease;box-shadow:0 3px 10px rgba(0,0,0,0.2);font-weight:800;display:flex;align-items:center;justify-content:center;" data-product-id="${product.menuItemId}">
+                            <button class="add-to-cart-btn" style="background:#FFF8DC;color:#8c1007;border:none;border-radius:12px;width:50px;height:44px;font-size:1.1rem;transition:all 0.3s ease;box-shadow:0 3px 10px rgba(0,0,0,0.2);font-weight:800;display:flex;align-items:center;justify-content:center;" data-product-id="${product.menuItemId}">
                                 <i class="fas fa-shopping-cart"></i>
                             </button>
                         </div>
@@ -428,31 +428,51 @@ else
             return descriptions[itemName] || "Delicious item made with fresh ingredients";
         }
 
+        async function addToCart(button) {
+            const card = button.closest('.product-card');
+            const qty = parseInt(card.querySelector('.qty-select').value);
+            const sizeSelect = card.querySelector('.size-select');
+            const selected = sizeSelect.options[sizeSelect.selectedIndex];
+            const priceId = selected.getAttribute('data-price-id');
+            if (!priceId) {
+                console.warn('Missing price id on size option');
+                return;
+            }
+            button.disabled = true;
+            const icon = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            try {
+                const res = await fetch('/Cart?handler=Add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ priceId: parseInt(priceId), quantity: qty })
+                });
+                if (res.status === 401) {
+                    window.location.href = '/Login';
+                    return;
+                }
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.message || 'Failed');
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                button.style.background = '#28a745';
+                setTimeout(() => { button.innerHTML = icon; button.style.background = '#FFF8DC'; }, 800);
+                if (window.onAddedToCart) window.onAddedToCart();
+            } catch (err) {
+                console.error(err);
+                button.innerHTML = '<i class="fas fa-times"></i>';
+                button.style.background = '#dc3545';
+                setTimeout(() => { button.innerHTML = icon; button.style.background = '#FFF8DC'; }, 1500);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
         function initializeCardEvents() {
             document.querySelectorAll('.add-to-cart-btn').forEach(button => {
                 button.addEventListener('click', function() {
-                    const productId = this.dataset.productId;
-                    const card = this.closest('.product-card');
-                    const qty = card.querySelector('.qty-select').value;
-                    const sizeSelect = card.querySelector('.size-select');
-                    const selected = sizeSelect.options[sizeSelect.selectedIndex];
-                    const sizeId = selected.value;
-                    const price = selected.dataset.price;
-
-                    this.style.transform = 'scale(0.9)';
-                    this.innerHTML = '<i class="fas fa-check"></i>';
-                    this.style.background = '#28a745';
-                    setTimeout(() => {
-                        this.style.transform = 'scale(1)';
-                        this.innerHTML = '<i class="fas fa-shopping-cart"></i>';
-                        this.style.background = '#FFF8DC';
-                    }, 1200);
-
-                    console.log(`Added to cart: Product ${productId}, Qty: ${qty}, SizeId: ${sizeId}, Price: &#8369;${price}`);
+                    addToCart(this);
                 });
             });
-
-            // Hover effects remain unchanged
         }
 
         document.addEventListener('DOMContentLoaded', function() {

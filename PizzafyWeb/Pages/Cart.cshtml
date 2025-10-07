@@ -1,0 +1,117 @@
+@page
+@model PizzafyWeb.Pages.CartModel
+@{
+    ViewData["Title"] = "Cart";
+    ViewData["BodyClass"] = "cart-page";
+}
+
+<section class="container py-4">
+    <h2 class="mb-4" style="color:#8c1007;font-weight:900;letter-spacing:2px;">Your Cart Items</h2>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="alert alert-info">Your cart is empty.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <colgroup>
+                    <col />
+                    <col style="width:220px;" />
+                    <col style="width:180px;" />
+                    <col style="width:150px;" />
+                    <col style="width:150px;" />
+                    <col style="width:120px;" />
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th class="text-center">Size</th>
+                        <th class="text-center">Qty</th>
+                        <th class="text-end">Unit Price</th>
+                        <th class="text-end">Subtotal</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="/images/products/@row.Image" alt="@row.ItemName" style="width:60px;height:60px;border-radius:8px;object-fit:cover;margin-right:12px;" />
+                                    <div>
+                                        <div class="fw-bold">@row.ItemName</div>
+                                        <small class="text-muted">@row.CategoryName</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center">
+                                    <form method="post" asp-page-handler="UpdateSize" class="d-flex align-items-center gap-2">
+                                        <input type="hidden" name="id" value="@row.CartId" />
+                                        <select name="newPriceId" class="form-select form-select-sm" style="width:200px;" onchange="this.form.submit()">
+                                            @foreach (var opt in row.Sizes)
+                                            {
+                                                <option value="@opt.PriceId" selected="@(opt.PriceId == row.CurrentPriceId)">@opt.SizeName</option>
+                                            }
+                                        </select>
+                                    </form>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <form method="post" asp-page-handler="UpdateQty" class="d-flex justify-content-center">
+                                    <input type="hidden" name="id" value="@row.CartId" />
+                                    <div class="d-inline-flex align-items-center border rounded-3 px-2 py-1" style="width:140px;justify-content:space-between;">
+                                        <button type="submit" name="op" value="dec" class="btn btn-sm btn-light" style="width:32px;height:32px;">&#8722;</button>
+                                        <input type="text" readonly class="form-control form-control-sm text-center border-0" style="width:60px;background:transparent;" value="@row.Quantity" />
+                                        <button type="submit" name="op" value="inc" class="btn btn-sm btn-light" style="width:32px;height:32px;">+</button>
+                                    </div>
+                                </form>
+                            </td>
+                            <td class="text-end">&#8369;@row.UnitPrice.ToString("0.00")</td>
+                            <td class="text-end">&#8369;@row.Subtotal.ToString("0.00")</td>
+                            <td class="text-end">
+                                <form method="post" asp-page-handler="Remove" class="d-inline">
+                                    <input type="hidden" name="id" value="@row.CartId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end fw-bold">Total</td>
+                        <td class="text-end fw-bold">&#8369;@Model.Total.ToString("0.00")</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="text-end mt-3">
+            <form method="post" asp-page-handler="Clear" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger">Clear Cart</button>
+            </form>
+            <a href="/" class="btn btn-danger ms-2">Proceed to Checkout</a>
+            <a href="/" class="btn btn-light ms-2">Continue Shopping</a>
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuLink = document.querySelector('.menu-nav-link');
+            if (menuLink) {
+                menuLink.setAttribute('href', '/#menu-section');
+                menuLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    window.location.href = '/#menu-section';
+                });
+            }
+        });
+    </script>
+}
