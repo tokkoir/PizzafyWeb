@@ -26,6 +26,10 @@ namespace PizzafyWeb.Pages.Admin
         public string ProductName { get; set; } = string.Empty;
 
         [BindProperty]
+        [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+        public string? Description { get; set; }
+
+        [BindProperty]
         [Required(ErrorMessage = "Category is required")]
         public int CategoryId { get; set; }
 
@@ -167,6 +171,7 @@ namespace PizzafyWeb.Pages.Admin
                 var menuItem = new MenuItem
                 {
                     ItemName = ProductName,
+                    Description = Description,
                     CategoryId = CategoryId,
                     UserId = userId,
                     Image = imageName // null if not uploaded

@@ -60,6 +60,13 @@
                                     <span asp-validation-for="ImageFile" class="text-danger"></span>
                                     <small class="form-text text-muted">Supported formats: JPG, PNG, GIF (Max: 5MB)</small>
                                 </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Description" class="form-label">Description</label>
+                                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Enter product description (optional)" maxlength="500"></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                    <small class="form-text text-muted">Maximum 500 characters</small>
+                                </div>
                             </div>
                         </div>
 
@@ -123,6 +130,7 @@
                         </div>
                         <div class="preview-info">
                             <h4 class="preview-name" id="previewName">Product Name</h4>
+                            <p class="preview-description" id="previewDescription">No description</p>
                             <span class="preview-category" id="previewCategory">Category</span>
                             <div class="preview-price" id="previewPrices">
                                 <span class="no-price">No price set</span>
@@ -159,6 +167,11 @@
         // Real-time preview updates
         document.querySelector('input[name="ProductName"]').addEventListener('input', function() {
             document.getElementById('previewName').textContent = this.value || 'Product Name';
+        });
+
+        // Description preview update
+        document.querySelector('textarea[name="Description"]').addEventListener('input', function() {
+            document.getElementById('previewDescription').textContent = this.value || 'No description';
         });
 
         // Category change handler - simplified

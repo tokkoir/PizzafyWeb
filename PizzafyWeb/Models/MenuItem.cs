@@ -15,6 +15,10 @@ namespace PizzafyWeb.Models
         [MaxLength(100)]
         public string ItemName { get; set; } = string.Empty;
 
+        [Column("description")]
+        [MaxLength(500)]
+        public string? Description { get; set; }
+
         [Required]
         [Column("category_id")]
         public int CategoryId { get; set; }

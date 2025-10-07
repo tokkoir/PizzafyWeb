@@ -10,6 +10,7 @@ namespace PizzafyWeb.Pages
     {
         public int MenuItemId { get; set; }
         public string ItemName { get; set; } = "";
+        public string? Description { get; set; }
         public string? Image { get; set; }
         public decimal Price { get; set; } // This will be the starting price (minimum)
         public List<SizePrice> Sizes { get; set; } = new();
@@ -119,6 +120,7 @@ namespace PizzafyWeb.Pages
                         {
                             menuItemId = rep.MenuItemId,
                             itemName = rep.ItemName,
+                            description = rep.Description,
                             image = g.Select(x => x.Image).FirstOrDefault(img => !string.IsNullOrWhiteSpace(img)) ?? rep.Image,
                             categoryName = rep.Category.CategoryName,
                             price = allSizes.Min(s => s.price),
@@ -225,6 +227,7 @@ namespace PizzafyWeb.Pages
                         {
                             MenuItemId = rep.MenuItemId,
                             ItemName = rep.ItemName,
+                            Description = rep.Description,
                             Image = g.Select(x => x.Image).FirstOrDefault(img => !string.IsNullOrWhiteSpace(img)) ?? rep.Image,
                             Price = allSizes.Min(s => s.Price),
                             CategoryName = rep.Category.CategoryName,

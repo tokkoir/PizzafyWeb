@@ -27,7 +27,7 @@
                 
                 <!-- Product Description -->
                 <p style="color:#FFF8DC;font-size:0.9rem;line-height:1.3;margin-bottom:1rem;min-height:2.5rem;position:relative;z-index:2;font-weight:400;">
-                    @GetProductDescription(product.ItemName)
+                    @(product.Description ?? "Delicious item made with fresh ingredients")
                 </p>
                 
                 <!-- Price -->
@@ -78,28 +78,3 @@
         apply();
     });
 </script>
-
-@functions {
-    private string GetProductDescription(string itemName)
-    {
-        var descriptions = new Dictionary<string, string>
-        {
-            {"Hawaiian", "Ham & Pineapple"},
-            {"Meat Lovers", "Pepperoni, sausage, bacon, ham and cheese"},
-            {"BBQ Chicken", "Spicy barbecue sauce, diced chicken, peppers, onion, and cilantro"},
-            {"Spinach & Feta", "Red onion, spinach, feta cheese and mushrooms"},
-            {"Margherita", "Fresh mozzarella, tomatoes, and basil"},
-            {"Pepperoni", "Classic pepperoni with mozzarella cheese"},
-            {"Veggie Supreme", "Bell peppers, mushrooms, onions, olives, and tomatoes"},
-            {"Four Cheese", "Mozzarella, cheddar, parmesan, and provolone"},
-            {"Chicken Wings", "Crispy chicken wings with your choice of sauce"},
-            {"Garlic Bread", "Fresh baked bread with garlic butter"},
-            {"Caesar Salad", "Fresh romaine lettuce with caesar dressing"},
-            {"Coca Cola", "Classic refreshing cola drink"},
-            {"Sprite", "Lemon-lime flavored soft drink"},
-            {"Orange Juice", "Fresh squeezed orange juice"}
-        };
-        
-        return descriptions.ContainsKey(itemName) ? descriptions[itemName] : "Delicious item made with fresh ingredients";
-    }
-}

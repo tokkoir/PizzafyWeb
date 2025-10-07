@@ -117,35 +117,35 @@ namespace PizzafyWeb.Services
                     var menuItems = new List<MenuItem>
                     {
                         // Pizza items (8 unique items)
-                        new MenuItem { ItemName = "Margherita Pizza", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Pepperoni Pizza", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Hawaiian Pizza", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Meat Lovers Pizza", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "BBQ Chicken Pizza", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Veggie Supreme Pizza", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Four Cheese Pizza", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Spinach & Feta Pizza", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Margherita Pizza", Description = "Fresh mozzarella, tomatoes, and basil", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Pepperoni Pizza", Description = "Classic pepperoni with mozzarella cheese", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Hawaiian Pizza", Description = "Ham & Pineapple", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Meat Lovers Pizza", Description = "Pepperoni, sausage, bacon, ham and cheese", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "BBQ Chicken Pizza", Description = "Spicy barbecue sauce, diced chicken, peppers, onion, and cilantro", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Veggie Supreme Pizza", Description = "Bell peppers, mushrooms, onions, olives, and tomatoes", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Four Cheese Pizza", Description = "Mozzarella, cheddar, parmesan, and provolone", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Spinach & Feta Pizza", Description = "Red onion, spinach, feta cheese and mushrooms", CategoryId = pizzaCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
                         
                         // Sides items (6 unique items)
-                        new MenuItem { ItemName = "Garlic Bread", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Chicken Wings", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Caesar Salad", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Mozzarella Sticks", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Onion Rings", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Potato Wedges", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Garlic Bread", Description = "Fresh baked bread with garlic butter", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Chicken Wings", Description = "Crispy chicken wings with your choice of sauce", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Caesar Salad", Description = "Fresh romaine lettuce with caesar dressing", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Mozzarella Sticks", Description = "Golden fried mozzarella sticks with marinara sauce", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Onion Rings", Description = "Crispy battered onion rings", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Potato Wedges", Description = "Seasoned potato wedges with sour cream", CategoryId = sidesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
                         
                         // Beverages items (5 unique items) 
                         // Example: If admin adds another "Sprite" with different size, it will be consolidated
-                        new MenuItem { ItemName = "Coca Cola", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Sprite", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Orange Juice", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Iced Tea", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Water", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Coca Cola", Description = "Classic refreshing cola drink", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Sprite", Description = "Lemon-lime flavored soft drink", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Orange Juice", Description = "Fresh squeezed orange juice", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Iced Tea", Description = "Refreshing iced tea with lemon", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Water", Description = "Pure drinking water", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
                         
                         // EXAMPLE: Adding duplicate "Sprite" entries to demonstrate consolidation
                         // These will be merged into a single card with multiple sizes/prices
-                        new MenuItem { ItemName = "Sprite", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
-                        new MenuItem { ItemName = "Sprite", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" }
+                        new MenuItem { ItemName = "Sprite", Description = "Lemon-lime flavored soft drink", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" },
+                        new MenuItem { ItemName = "Sprite", Description = "Lemon-lime flavored soft drink", CategoryId = beveragesCategory.CategoryId, UserId = adminUser.UserId, Image = "" }
                     };
 
                     _context.MenuItems.AddRange(menuItems);

@@ -26,6 +26,10 @@ namespace PizzafyWeb.Pages.Admin
         public string ProductName { get; set; } = string.Empty;
 
         [BindProperty]
+        [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+        public string? Description { get; set; }
+
+        [BindProperty]
         [Required(ErrorMessage = "Category is required")]
         public int CategoryId { get; set; }
 
@@ -59,6 +63,7 @@ namespace PizzafyWeb.Pages.Admin
                 return RedirectToPage("/Admin/MenuManagement");
 
             ProductName = menuItem.ItemName;
+            Description = menuItem.Description;
             CategoryId = menuItem.CategoryId;
             ExistingImage = menuItem.Image;
             SelectedCategoryName = Categories.FirstOrDefault(c => c.CategoryId == CategoryId)?.CategoryName ?? "";
@@ -108,6 +113,7 @@ namespace PizzafyWeb.Pages.Admin
                 return Page();
             }
             menuItem.ItemName = ProductName;
+            menuItem.Description = Description;
             menuItem.CategoryId = CategoryId;
             if (ImageFile != null && ImageFile.Length > 0)
             {
