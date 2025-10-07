@@ -166,6 +166,7 @@
                             <th>Total</th>
                             <th>Status</th>
                             <th>Order Date</th>
+                            <th>Paid</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -215,9 +216,19 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @order.OrderDate.ToString("MMM dd, yyyy")
+                                    @PizzafyWeb.Utils.TimeUtils.FormatPH(order.OrderDate, "MMM dd, yyyy 'at' hh:mm tt")
                                     <br>
-                                    <small class="text-muted">@order.OrderDate.ToString("hh:mm tt")</small>
+                                    <small class="text-muted">@order.TimeAgo</small>
+                                </td>
+                                <td>
+                                    @if (order.IsPaid)
+                                    {
+                                        <span class="badge bg-success">Paid</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Unpaid</span>
+                                    }
                                 </td>
                                 <td>
                                     <form method="post" asp-page-handler="UpdateStatus" class="d-inline" onsubmit="return lockStatusUpdates(this)">
@@ -302,10 +313,11 @@
                         </div>
                         <div class="col-md-6">
                             <h6><i class="fas fa-info-circle me-2"></i>Order Information</h6>
-                            <p class="mb-1"><strong>Date:</strong> @order.OrderDate.ToString("MMM dd, yyyy 'at' hh:mm tt")</p>
+                            <p class="mb-1"><strong>Date:</strong> @PizzafyWeb.Utils.TimeUtils.FormatPH(order.OrderDate, "MMM dd, yyyy 'at' hh:mm tt")</p>
                             <p class="mb-1"><strong>Status:</strong> 
                                 <span class="badge @GetStatusBadgeClass(order.StatusName)">@order.StatusName</span>
                             </p>
+                            <p class="mb-1"><strong>Payment Method:</strong> @order.PaymentMethod @if(order.IsPaid){<span class="badge bg-success ms-2">Paid</span>}</p>
                             <p class="mb-0"><strong>Total:</strong> <span class="text-success">&#8369;@order.TotalAmount.ToString("0.00")</span></p>
                         </div>
                     </div>

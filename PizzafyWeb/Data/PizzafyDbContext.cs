@@ -18,6 +18,7 @@ namespace PizzafyWeb.Data
         public DbSet<Status> Statuses { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<Payment> Payments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -132,6 +133,11 @@ namespace PizzafyWeb.Data
                     .HasForeignKey(e => e.StatusId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                entity.HasOne(e => e.Payment)
+                    .WithMany()
+                    .HasForeignKey(e => e.PaymentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
                 entity.HasOne(e => e.ModifiedByUser)
                     .WithMany()
                     .HasForeignKey(e => e.ModifiedBy)
@@ -156,6 +162,17 @@ namespace PizzafyWeb.Data
                     .WithMany()
                     .HasForeignKey(e => e.PriceId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Configure Payment entity and seed initial data
+            modelBuilder.Entity<Payment>(entity =>
+            {
+                entity.HasKey(e => e.PaymentId);
+                entity.Property(e => e.PaymentName).HasMaxLength(50).IsRequired();
+                entity.HasData(
+                    new Payment { PaymentId = 1, PaymentName = "Cash on Delivery" },
+                    new Payment { PaymentId = 2, PaymentName = "GCash" }
+                );
             });
         }
     }

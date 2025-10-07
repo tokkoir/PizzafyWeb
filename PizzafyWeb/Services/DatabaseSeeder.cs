@@ -23,8 +23,9 @@ namespace PizzafyWeb.Services
                 // Ensure database exists (no migrations dependency)
                 await _context.Database.EnsureCreatedAsync();
 
-                // Align schema change: order_items -> order_detail
+                // Align schema changes that might not be migrated yet
                 await EnsureOrderDetailSchemaAsync();
+                await EnsurePaymentSchemaAsync();
 
                 // Seed Categories
                 if (!await _context.Categories.AnyAsync())
@@ -296,6 +297,62 @@ namespace PizzafyWeb.Services
             {
                 // Log the exception in production
                 Console.WriteLine($"Error seeding database: {ex.Message}");
+            }
+        }
+
+        private async Task EnsurePaymentSchemaAsync()
+        {
+            try
+            {
+                await _context.Database.OpenConnectionAsync();
+                using var cmd = _context.Database.GetDbConnection().CreateCommand();
+
+                // Ensure payment table exists
+                cmd.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'payment'";
+                var paymentTableExists = Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+                if (!paymentTableExists)
+                {
+                    cmd.CommandText = @"CREATE TABLE payment (
+                        payment_id INT AUTO_INCREMENT PRIMARY KEY,
+                        payment_name VARCHAR(50) NOT NULL
+                    ) ENGINE=InnoDB";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Seed payment methods if empty
+                cmd.CommandText = "SELECT COUNT(*) FROM payment";
+                var paymentCount = 0;
+                try { paymentCount = Convert.ToInt32(await cmd.ExecuteScalarAsync()); } catch { paymentCount = 0; }
+                if (paymentCount == 0)
+                {
+                    cmd.CommandText = "INSERT INTO payment (payment_name) VALUES ('Cash on Delivery'), ('GCash')";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Ensure orders.payment_id column exists
+                cmd.CommandText = "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'orders' AND column_name = 'payment_id'";
+                var paymentIdColExists = Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+                if (!paymentIdColExists)
+                {
+                    cmd.CommandText = "ALTER TABLE orders ADD COLUMN payment_id INT NOT NULL DEFAULT 1";
+                    await cmd.ExecuteNonQueryAsync();
+
+                    // Create index
+                    cmd.CommandText = "CREATE INDEX IX_orders_payment_id ON orders(payment_id)";
+                    try { await cmd.ExecuteNonQueryAsync(); } catch { /* ignore */ }
+
+                    // Add FK
+                    cmd.CommandText = "ALTER TABLE orders ADD CONSTRAINT FK_orders_payment_payment_id FOREIGN KEY (payment_id) REFERENCES payment(payment_id) ON DELETE RESTRICT";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Schema alignment for payment failed: {ex.Message}");
+            }
+            finally
+            {
+                await _context.Database.CloseConnectionAsync();
             }
         }
 

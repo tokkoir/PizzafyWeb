@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using PizzafyWeb.Data;
 using PizzafyWeb.Models;
+using PizzafyWeb.Utils;
 using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 
@@ -22,6 +23,16 @@ namespace PizzafyWeb.Pages
         }
 
         public List<CartItemViewModel> CartItems { get; set; } = new();
+        public List<Payment> PaymentMethods { get; set; } = new();
+        [BindProperty]
+        [Required(ErrorMessage = "Please choose a payment method")]
+        public int SelectedPaymentId { get; set; }
+
+        [BindProperty]
+        [Required(ErrorMessage = "GCash number is required")]
+        [RegularExpression(@"^(09\d{9}|\+639\d{9})$", ErrorMessage = "Please enter a valid 11-digit GCash number")]
+        public string? GCashNumber { get; set; }
+
         public decimal Subtotal => CartItems.Sum(i => i.Subtotal);
         public decimal DeliveryFee { get; set; } = 19m; // Default delivery fee
         public decimal Total => Subtotal + DeliveryFee;
@@ -65,6 +76,9 @@ namespace PizzafyWeb.Pages
                 return RedirectToPage("/Login");
             }
 
+            PaymentMethods = await _context.Payments.OrderBy(p => p.PaymentId).ToListAsync();
+            if (PaymentMethods.Any()) SelectedPaymentId = PaymentMethods.First().PaymentId;
+
             // Load cart items
             CartItems = await _context.Carts
                 .Where(c => c.UserId == userId)
@@ -92,7 +106,7 @@ namespace PizzafyWeb.Pages
                 return RedirectToPage("/Cart");
             }
 
-            // Pre-fill user information - fetch from database but allow editing
+            // Pre-fill user information - fetch from database but allow editing phone only
             var user = await _context.Users.FindAsync(userId);
             if (user != null)
             {
@@ -196,6 +210,37 @@ namespace PizzafyWeb.Pages
                 return Page();
             }
 
+            // Always use the saved profile address for checkout, do not trust posted value
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                ModelState.AddModelError("", "User not found.");
+                return Page();
+            }
+
+            // Override bound address with the user's saved address
+            ModelState.Remove(nameof(DeliveryAddress));
+            DeliveryAddress = user.Address ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(DeliveryAddress))
+            {
+                ModelState.AddModelError(nameof(DeliveryAddress), "Please set your delivery address in your Profile before checking out.");
+            }
+
+            // Custom validation for GCash payment
+            if (SelectedPaymentId == 2) // Assuming GCash is ID 2
+            {
+                if (string.IsNullOrWhiteSpace(GCashNumber))
+                {
+                    ModelState.AddModelError(nameof(GCashNumber), "GCash number is required for GCash payment.");
+                }
+            }
+            else
+            {
+                // Clear GCash number if not using GCash
+                GCashNumber = null;
+                ModelState.Remove(nameof(GCashNumber));
+            }
+
             // Reload cart items for validation
             CartItems = await _context.Carts
                 .Where(c => c.UserId == userId)
@@ -221,14 +266,28 @@ namespace PizzafyWeb.Pages
                 return Page();
             }
 
+            // Recompute delivery fee on the server to avoid tampering
+            var serverDeliveryFee = await CalculateDeliveryFeeAsync(DeliveryAddress);
+            CalculatedDeliveryFee = serverDeliveryFee;
+
             if (!ModelState.IsValid)
             {
+                PaymentMethods = await _context.Payments.OrderBy(p => p.PaymentId).ToListAsync();
                 return Page();
             }
 
             try
             {
                 using var transaction = await _context.Database.BeginTransactionAsync();
+
+                // Validate payment method
+                var payment = await _context.Payments.FindAsync(SelectedPaymentId);
+                if (payment == null)
+                {
+                    ModelState.AddModelError("", "Invalid payment method.");
+                    PaymentMethods = await _context.Payments.OrderBy(p => p.PaymentId).ToListAsync();
+                    return Page();
+                }
 
                 // Get pending status
                 var pendingStatus = await _context.Statuses
@@ -237,6 +296,7 @@ namespace PizzafyWeb.Pages
                 if (pendingStatus == null)
                 {
                     ModelState.AddModelError("", "System error: Unable to process order. Please try again.");
+                    PaymentMethods = await _context.Payments.OrderBy(p => p.PaymentId).ToListAsync();
                     return Page();
                 }
 
@@ -245,11 +305,12 @@ namespace PizzafyWeb.Pages
                 {
                     UserId = userId,
                     StatusId = pendingStatus.StatusId,
-                    OrderDate = DateTime.UtcNow,
+                    PaymentId = SelectedPaymentId,
+                    OrderDate = DateTime.UtcNow, // store UTC; display PH
                     TotalAmount = Subtotal + CalculatedDeliveryFee, // Include delivery fee in total
                     DeliveryFee = CalculatedDeliveryFee,
                     DeliveryAddress = DeliveryAddress,
-                    LastUpdate = DateTime.UtcNow
+                    LastUpdate = DateTime.UtcNow // store UTC; display PH
                 };
 
                 _context.Orders.Add(order);
@@ -275,14 +336,9 @@ namespace PizzafyWeb.Pages
                 _context.Carts.RemoveRange(cartItems);
                 await _context.SaveChangesAsync();
 
-                // Update user contact info if provided
-                var user = await _context.Users.FindAsync(userId);
-                if (user != null)
-                {
-                    user.PhoneNumber = PhoneNumber;
-                    user.Address = DeliveryAddress;
-                    await _context.SaveChangesAsync();
-                }
+                // Update user contact info if provided (address managed via Profile only)
+                user.PhoneNumber = PhoneNumber;
+                await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
 
@@ -294,6 +350,7 @@ namespace PizzafyWeb.Pages
             catch (Exception ex)
             {
                 ModelState.AddModelError("", $"An error occurred while processing your order: {ex.Message}");
+                PaymentMethods = await _context.Payments.OrderBy(p => p.PaymentId).ToListAsync();
                 return Page();
             }
         }

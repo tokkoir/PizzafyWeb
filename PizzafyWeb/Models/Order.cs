@@ -18,6 +18,10 @@ namespace PizzafyWeb.Models
         [Column("status_id")]
         public int StatusId { get; set; }
 
+        [Required]
+        [Column("payment_id")]
+        public int PaymentId { get; set; }
+
         [Column("order_date")]
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
@@ -44,6 +48,9 @@ namespace PizzafyWeb.Models
 
         [ForeignKey(nameof(StatusId))]
         public Status Status { get; set; } = null!;
+
+        [ForeignKey(nameof(PaymentId))]
+        public Payment Payment { get; set; } = null!;
 
         [ForeignKey(nameof(ModifiedBy))]
         public User? ModifiedByUser { get; set; }

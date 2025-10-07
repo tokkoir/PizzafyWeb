@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using PizzafyWeb.Utils;
 
 namespace PizzafyWeb.Models
 {
@@ -27,7 +28,7 @@ namespace PizzafyWeb.Models
         public decimal UnitPrice { get; set; }
 
         [Column("added_at")]
-        public DateTime AddedAt { get; set; } = DateTime.UtcNow;
+        public DateTime AddedAt { get; set; } = DateTime.UtcNow; // store UTC; display via TimeUtils when needed
 
         // Navigation
         [ForeignKey(nameof(UserId))]

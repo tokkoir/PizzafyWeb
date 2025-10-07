@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using PizzafyWeb.Data;
 using PizzafyWeb.Models;
+using PizzafyWeb.Utils;
 using System.Security.Claims;
 
 namespace PizzafyWeb.Pages.Admin
@@ -51,6 +52,8 @@ namespace PizzafyWeb.Pages.Admin
             public int ItemCount { get; set; }
             public List<OrderItemInfo> Items { get; set; } = new();
             public string TimeAgo { get; set; } = string.Empty;
+            public string PaymentMethod { get; set; } = string.Empty;
+            public bool IsPaid { get; set; }
         }
 
         public class OrderItemInfo
@@ -75,6 +78,7 @@ namespace PizzafyWeb.Pages.Admin
             var baseQuery = _context.Orders
                 .Include(o => o.User)
                 .Include(o => o.Status)
+                .Include(o => o.Payment)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.MenuPrice)
                         .ThenInclude(mp => mp.MenuItem)
@@ -107,7 +111,7 @@ namespace PizzafyWeb.Pages.Admin
             ReadyOrders = allOrders.Count(o => o.Status.StatusName == "Ready");
             CompletedOrders = allOrders.Count(o => o.Status.StatusName == "Completed");
             TotalRevenue = allOrders.Where(o => o.Status.StatusName == "Completed").Sum(o => o.TotalAmount);
-            TodayRevenue = allOrders.Where(o => o.Status.StatusName == "Completed" && o.OrderDate.Date == DateTime.Today).Sum(o => o.TotalAmount);
+            TodayRevenue = allOrders.Where(o => o.Status.StatusName == "Completed" && TimeUtils.ToPH(o.OrderDate).Date == TimeUtils.NowPH.Date).Sum(o => o.TotalAmount);
 
             // Get total count for pagination
             var totalCount = await baseQuery.CountAsync();
@@ -116,9 +120,13 @@ namespace PizzafyWeb.Pages.Admin
             // Apply pagination and get orders
             var orders = await baseQuery
                 .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+
+            // Apply page after materializing to be safe with TimeUtils
+            orders = orders
                 .Skip((CurrentPage - 1) * PageSize)
                 .Take(PageSize)
-                .ToListAsync();
+                .ToList();
 
             // Map to view models
             Orders = orders.Select(o => new AdminOrderViewModel
@@ -142,7 +150,9 @@ namespace PizzafyWeb.Pages.Admin
                     UnitPrice = oi.UnitPrice,
                     Subtotal = oi.Subtotal
                 }).ToList(),
-                TimeAgo = GetTimeAgo(o.OrderDate)
+                TimeAgo = GetTimeAgo(o.OrderDate),
+                PaymentMethod = o.Payment?.PaymentName ?? "N/A",
+                IsPaid = (o.Payment != null && o.Payment.PaymentName.ToLower() == "gcash")
             }).ToList();
         }
 
@@ -191,7 +201,7 @@ namespace PizzafyWeb.Pages.Admin
             // All good: perform update
             var adminUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             order.StatusId = requestedStatus.StatusId;
-            order.LastUpdate = DateTime.UtcNow;
+            order.LastUpdate = DateTime.UtcNow; // stored in UTC, shown in PH via TimeUtils
             order.ModifiedBy = adminUserId;
 
             await _context.SaveChangesAsync();
@@ -213,7 +223,9 @@ namespace PizzafyWeb.Pages.Admin
 
         private static string GetTimeAgo(DateTime orderDate)
         {
-            var timeSpan = DateTime.UtcNow - orderDate;
+            var nowPh = TimeUtils.NowPH;
+            var orderPh = TimeUtils.ToPH(orderDate);
+            var timeSpan = nowPh - orderPh;
             
             if (timeSpan.TotalDays >= 365)
                 return $"{(int)(timeSpan.TotalDays / 365)} year{((int)(timeSpan.TotalDays / 365) != 1 ? "s" : "")} ago";

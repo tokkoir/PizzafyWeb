@@ -2,158 +2,110 @@
 @model PizzafyWeb.Pages.OrderConfirmationModel
 @{
     ViewData["Title"] = "Order Confirmation";
-    ViewData["BodyClass"] = "order-confirmation-page";
 }
 
-<section class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Success Header -->
-            <div class="text-center mb-5">
-                <div class="mb-4">
-                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle" 
-                         style="width:80px;height:80px;background:#28a745;color:white;">
-                        <i class="fas fa-check" style="font-size:2.5rem;"></i>
-                    </div>
-                </div>
-                <h1 class="text-success mb-2">Order Confirmed!</h1>
-                <h4 class="text-muted">Order #@Model.Order!.OrderId</h4>
-                <p class="lead">Thank you for your order. We'll start preparing it right away!</p>
-            </div>
+<section class="container py-4">
+    <div class="position-relative text-center mb-4">
+        <a href="/Orders" class="btn btn-outline-secondary position-absolute start-0 top-50 translate-middle-y">
+            <i class="fas fa-arrow-left me-1"></i>Back
+        </a>
+        <h2 style="color:#8c1007;font-weight:900;letter-spacing:2px;">Order Confirmed</h2>
+        <p class="text-muted">Thank you for your order! Below are your order details.</p>
+    </div>
 
-            <!-- Order Details Card -->
-            <div class="card shadow-sm">
-                <div class="card-header" style="background:#8c1007;color:white;">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Order Details</h5>
-                        </div>
-                        <div class="col-auto">
-                            <span class="badge badge-pill" style="background:#28a745;padding:8px 12px;">
-                                @Model.Order.StatusName
-                            </span>
-                        </div>
+    @if (Model.Order != null)
+    {
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+                <!-- Order Information -->
+                <div class="card mb-4">
+                    <div class="card-header" style="background:#8c1007;color:white;">
+                        <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Order Information</h5>
                     </div>
-                </div>
-                <div class="card-body">
-                    <!-- Order Info -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h6 class="text-muted mb-2">Order Date</h6>
-                            <p class="mb-0">@Model.Order.OrderDate.ToString("MMMM dd, yyyy 'at' hh:mm tt")</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-muted mb-2">Total Amount</h6>
-                            <p class="mb-0" style="color:#8c1007;font-weight:bold;font-size:1.2rem;">
-                                &#8369;@Model.Order.TotalAmount.ToString("0.00")
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Customer Info -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h6 class="text-muted mb-2">Customer</h6>
-                            <p class="mb-1">@Model.Order.CustomerName</p>
-                            <p class="mb-0 text-muted">@Model.Order.PhoneNumber</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-muted mb-2">Delivery Address</h6>
-                            <p class="mb-0">@Model.Order.Address</p>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <!-- Order Items -->
-                    <h6 class="mb-3">Items Ordered</h6>
-                    @foreach (var item in Model.Order.Items)
-                    {
-                        <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
-                            <div class="me-3">
-                                @if (!string.IsNullOrWhiteSpace(item.Image))
-                                {
-                                    <img src="/images/products/@item.Image" alt="@item.ItemName" 
-                                         style="width:60px;height:60px;border-radius:8px;object-fit:cover;" />
-                                }
-                                else
-                                {
-                                    <div style="width:60px;height:60px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;justify-content:center;">
-                                        <i class="fas fa-image text-muted"></i>
-                                    </div>
-                                }
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Order Number:</strong> #@Model.Order.OrderId</p>
+                                <p class="mb-1"><strong>Status:</strong> @Model.Order.StatusName</p>
+                                <p class="mb-0"><strong>Payment Method:</strong> @Model.Order.PaymentMethod</p>
                             </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">@item.ItemName</h6>
-                                <p class="text-muted mb-1">@item.SizeName</p>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="text-muted">@item.Quantity × &#8369;@item.UnitPrice.ToString("0.00")</span>
-                                    <span class="fw-bold">&#8369;@item.Subtotal.ToString("0.00")</span>
-                                </div>
+                            <div class="col-md-6 text-md-end">
+                                <p class="mb-1"><strong>Date:</strong> @PizzafyWeb.Utils.TimeUtils.FormatPH(Model.Order.OrderDate, "MMM dd, yyyy 'at' hh:mm tt")</p>
+                                <p class="mb-0"><strong>Total:</strong> <span class="text-success">&#8369;@Model.Order.TotalAmount.ToString("0.00")</span></p>
                             </div>
                         </div>
-                    }
+                    </div>
+                </div>
 
-                    <!-- Total -->
-                    <div class="pt-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Subtotal:</span>
-                            <span>&#8369;@Model.Order.Subtotal.ToString("0.00")</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Delivery Fee:</span>
-                            <span class="@(Model.Order.DeliveryFee == 0 ? "text-success" : "")">
-                                @if (Model.Order.DeliveryFee == 0)
-                                {
-                                    <span>FREE</span>
-                                }
-                                else
-                                {
-                                    <span>&#8369;@Model.Order.DeliveryFee.ToString("0.00")</span>
-                                }
-                            </span>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Total:</h5>
-                            <h5 class="mb-0" style="color:#8c1007;">&#8369;@Model.Order.TotalAmount.ToString("0.00")</h5>
+                <!-- Customer -->
+                <div class="card mb-4">
+                    <div class="card-header" style="background:#8c1007;color:white;">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Customer</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-1"><strong>Name:</strong> @Model.Order.CustomerName</p>
+                        <p class="mb-1"><strong>Phone:</strong> @Model.Order.PhoneNumber</p>
+                        <p class="mb-0"><strong>Address:</strong> @Model.Order.Address</p>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <div class="card mb-4">
+                    <div class="card-header" style="background:#8c1007;color:white;">
+                        <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Order Items</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Size</th>
+                                        <th>Qty</th>
+                                        <th>Unit Price</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Order.Items)
+                                    {
+                                        <tr>
+                                            <td>@item.ItemName</td>
+                                            <td>@item.SizeName</td>
+                                            <td>@item.Quantity</td>
+                                            <td>&#8369;@item.UnitPrice.ToString("0.00")</td>
+                                            <td>&#8369;@item.Subtotal.ToString("0.00")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4"><strong>Subtotal:</strong></td>
+                                        <td><strong>&#8369;@Model.Order.Subtotal.ToString("0.00")</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="4"><strong>Delivery Fee:</strong></td>
+                                        <td><strong>&#8369;@Model.Order.DeliveryFee.ToString("0.00")</strong></td>
+                                    </tr>
+                                    <tr class="table-success">
+                                        <td colspan="4"><strong>Total:</strong></td>
+                                        <td><strong>&#8369;@Model.Order.TotalAmount.ToString("0.00")</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Next Steps -->
-            <div class="card mt-4">
-                <div class="card-body text-center">
-                    <h6 class="mb-3">What happens next?</h6>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <i class="fas fa-utensils fa-2x text-warning mb-2"></i>
-                            <p class="mb-0"><strong>Preparing</strong><br>We'll start cooking your order</p>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <i class="fas fa-truck fa-2x text-info mb-2"></i>
-                            <p class="mb-0"><strong>On the way</strong><br>Your order will be delivered</p>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <i class="fas fa-home fa-2x text-success mb-2"></i>
-                            <p class="mb-0"><strong>Delivered</strong><br>Enjoy your meal!</p>
-                        </div>
-                    </div>
+                <!-- Actions (below the brand/title) remain here top of page -->
+                <div class="d-flex justify-content-center gap-2 mb-4">
+                    <a href="/Orders?handler=DownloadReceipt&orderId=@Model.Order.OrderId" class="btn btn-success" download>
+                        <i class="fas fa-download me-1"></i>Download Receipt
+                    </a>
                 </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="text-center mt-4">
-                <a href="/Orders" class="btn btn-outline-primary me-2">
-                    <i class="fas fa-history me-2"></i>View Order History
-                </a>
-                <a href="/" class="btn btn-success">
-                    <i class="fas fa-plus me-2"></i>Order Again
-                </a>
             </div>
         </div>
-    </div>
+    }
 </section>
 
 @section Scripts {
@@ -171,6 +123,27 @@
                 checkIcon.style.animation = 'pulse 2s infinite';
             }
         });
+
+        // Download receipt with better UX
+        document.querySelector('a[download]')?.addEventListener('click', function(e) {
+            const btn = this;
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating Receipt...';
+            btn.classList.add('disabled');
+            
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-check me-2"></i>Receipt Downloaded!';
+                btn.classList.remove('btn-outline-success');
+                btn.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('btn-success', 'disabled');
+                    btn.classList.add('btn-outline-success');
+                }, 2000);
+            }, 1000);
+        });
     </script>
 }
 
@@ -184,6 +157,18 @@
         
         .badge-pill {
             border-radius: 50px;
+        }
+
+        .btn.disabled {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* Print styles for the downloaded receipt */
+        @@media print {
+            .no-print {
+                display: none !important;
+            }
         }
     </style>
 }
