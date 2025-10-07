@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using PizzafyWeb.Data;
 using PizzafyWeb.Models;
 using System.Security.Claims;
@@ -13,10 +14,25 @@ namespace PizzafyWeb.Pages
     public class CartModel : PageModel
     {
         private readonly PizzafyDbContext _context;
-        public CartModel(PizzafyDbContext context) { _context = context; }
+        private readonly CartSettings _cartSettings;
+        
+        public CartModel(PizzafyDbContext context, IOptions<CartSettings> cartSettings) 
+        { 
+            _context = context; 
+            _cartSettings = cartSettings.Value;
+        }
 
         public List<CartRowVm> Items { get; set; } = new();
         public decimal Total => Items.Sum(i => i.Subtotal);
+
+        /// <summary>
+        /// Helper method to format price with peso symbol
+        /// </summary>
+        private static string FormatPrice(decimal price)
+        {
+            // Use Unicode escape sequence for peso symbol to ensure compatibility
+            return $"\u20B1{price:F2}";
+        }
 
         public class CartRowVm
         {
@@ -29,6 +45,8 @@ namespace PizzafyWeb.Pages
             public string SizeName { get; set; } = string.Empty;
             public int Quantity { get; set; }
             public decimal UnitPrice { get; set; }
+            public decimal CurrentPrice { get; set; } // Current price from menu
+            public bool PriceChanged { get; set; } // Flag to indicate price change
             public decimal Subtotal => UnitPrice * Quantity;
             public List<SizeOption> Sizes { get; set; } = new();
         }
@@ -43,6 +61,19 @@ namespace PizzafyWeb.Pages
         public async Task OnGet()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            // First, remove any cart items that reference deleted prices
+            var orphanedItems = await _context.Carts
+                .Where(c => c.UserId == userId)
+                .Where(c => !_context.MenuPrices.Any(mp => mp.PriceId == c.PriceId))
+                .ToListAsync();
+
+            if (orphanedItems.Any())
+            {
+                _context.Carts.RemoveRange(orphanedItems);
+                await _context.SaveChangesAsync();
+                TempData["RemovedItemsMessage"] = $"Removed {orphanedItems.Count} unavailable item(s) from your cart.";
+            }
 
             Items = await _context.Carts
                 .Where(c => c.UserId == userId)
@@ -62,9 +93,61 @@ namespace PizzafyWeb.Pages
                     Image = c.MenuPrice.MenuItem.Image,
                     SizeName = c.MenuPrice.Size.SizeName,
                     Quantity = c.Quantity,
-                    UnitPrice = c.UnitPrice
+                    UnitPrice = c.UnitPrice,
+                    CurrentPrice = c.MenuPrice.UnitPrice, // Current price from database
+                    PriceChanged = c.UnitPrice != c.MenuPrice.UnitPrice // Flag for price changes
                 })
                 .ToListAsync();
+
+            // Check for price changes and handle based on configuration
+            var priceChangedItems = new List<string>();
+            var removedItems = new List<string>();
+            
+            foreach (var item in Items.Where(i => i.PriceChanged))
+            {
+                var cartItem = await _context.Carts.FindAsync(item.CartId);
+                if (cartItem != null)
+                {
+                    var oldPrice = cartItem.UnitPrice;
+                    var newPrice = item.CurrentPrice;
+                    var priceIncrease = (newPrice - oldPrice) / oldPrice;
+                    
+                    // Handle based on configuration
+                    if (_cartSettings.HandlePriceChanges == "Remove" || 
+                        (_cartSettings.HandlePriceChanges == "RemoveOnIncrease" && newPrice > oldPrice) ||
+                        (_cartSettings.RemoveOnPriceIncrease && priceIncrease > _cartSettings.PriceIncreaseThreshold))
+                    {
+                        // Remove item from cart
+                        _context.Carts.Remove(cartItem);
+                        removedItems.Add($"{item.ItemName} ({item.SizeName}) - Price changed from {FormatPrice(oldPrice)} to {FormatPrice(newPrice)}");
+                        
+                        // Remove from Items list for display
+                        Items.Remove(item);
+                    }
+                    else
+                    {
+                        // Update price
+                        cartItem.UnitPrice = newPrice;
+                        item.UnitPrice = newPrice; // Update display model too
+                        priceChangedItems.Add($"{item.ItemName} ({item.SizeName}): {FormatPrice(oldPrice)} ? {FormatPrice(newPrice)}");
+                    }
+                }
+            }
+
+            if (priceChangedItems.Any() || removedItems.Any())
+            {
+                await _context.SaveChangesAsync();
+                
+                if (priceChangedItems.Any())
+                {
+                    TempData["PriceUpdateMessage"] = $"Prices have been updated for: {string.Join(", ", priceChangedItems)}";
+                }
+                
+                if (removedItems.Any())
+                {
+                    TempData["RemovedPriceChangeMessage"] = $"Items removed due to price changes: {string.Join(", ", removedItems)}";
+                }
+            }
 
             // Populate available sizes per cart row (unified across all MenuItems with the same ItemName)
             var itemNames = Items.Select(i => i.ItemName).Distinct().ToList();

@@ -398,7 +398,7 @@ else
                 const apply = () => {
                     const opt = sizeSelect.options[sizeSelect.selectedIndex];
                     const p = parseFloat(opt.dataset.price);
-                    if (!isNaN(p)) priceDisplay.textContent = `&#8369;${p.toFixed(2)}`;
+                    if (!isNaN(p)) priceDisplay.textContent = `\u20B1${p.toFixed(2)}`; // use Unicode peso sign
                 };
                 sizeSelect.addEventListener('change', apply);
                 // initialize to first size price

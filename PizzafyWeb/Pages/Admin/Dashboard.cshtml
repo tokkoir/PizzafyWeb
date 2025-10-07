@@ -1,0 +1,56 @@
+@page
+@model PizzafyWeb.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_AdminLayout";
+}
+
+<div class="admin-page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="admin-page-title">
+                <i class="fas fa-gauge-high me-2"></i>Dashboard
+            </h1>
+            <p class="admin-page-subtitle">Overview of your store</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
+            <div class="stat-content">
+                <h3>Total Orders</h3>
+                <p class="mb-0 text-muted">View all orders in Orders tab</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="stat-icon"><i class="fas fa-pizza-slice"></i></div>
+            <div class="stat-content">
+                <h3>Menu</h3>
+                <p class="mb-0 text-muted">Manage your products</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="stat-icon"><i class="fas fa-truck"></i></div>
+            <div class="stat-content">
+                <h3>Order Status</h3>
+                <p class="mb-0 text-muted">Track active orders</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-content">
+                <h3>Customers</h3>
+                <p class="mb-0 text-muted">Customer insights</p>
+            </div>
+        </div>
+    </div>
+</div>

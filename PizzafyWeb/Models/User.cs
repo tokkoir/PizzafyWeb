@@ -30,15 +30,13 @@ namespace PizzafyWeb.Models
         [MaxLength(50)]
         public string Password { get; set; } = string.Empty;
 
-        [Required]
         [Column("phone_number")]
         [MaxLength(20)]
-        public string PhoneNumber { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
 
-        [Required]
         [Column("address")]
         [MaxLength(100)]
-        public string Address { get; set; } = string.Empty;
+        public string? Address { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;

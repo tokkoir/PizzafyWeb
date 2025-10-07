@@ -8,6 +8,36 @@
 <section class="container py-4">
     <h2 class="mb-4" style="color:#8c1007;font-weight:900;letter-spacing:2px;">Your Cart Items</h2>
 
+    <!-- Price Update Notification -->
+    @if (TempData["PriceUpdateMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Price Update Notice:</strong> @TempData["PriceUpdateMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Removed Items Notification -->
+    @if (TempData["RemovedItemsMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Items Removed:</strong> @TempData["RemovedItemsMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Price Change Removal Notification -->
+    @if (TempData["RemovedPriceChangeMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Items Removed Due to Price Changes:</strong> @TempData["RemovedPriceChangeMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     @if (Model.Items.Count == 0)
     {
         <div class="alert alert-info">Your cart is empty.</div>
@@ -95,7 +125,7 @@
             <form method="post" asp-page-handler="Clear" class="d-inline">
                 <button type="submit" class="btn btn-outline-danger">Clear Cart</button>
             </form>
-            <a href="/" class="btn btn-danger ms-2">Proceed to Checkout</a>
+            <a href="/Checkout" class="btn btn-danger ms-2">Proceed to Checkout</a>
             <a href="/" class="btn btn-light ms-2">Continue Shopping</a>
         </div>
     }

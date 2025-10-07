@@ -1,12 +1,17 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using PizzafyWeb.Data;
+using PizzafyWeb.Models;
 using PizzafyWeb.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+
+// Configure cart settings
+builder.Services.Configure<CartSettings>(
+    builder.Configuration.GetSection("CartSettings"));
 
 // Configure HTTPS
 builder.Services.AddHttpsRedirection(options =>

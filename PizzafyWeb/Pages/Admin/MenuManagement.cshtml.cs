@@ -92,7 +92,7 @@ namespace PizzafyWeb.Pages.Admin
                 TempData["ErrorMessage"] = "An error occurred while deleting the product.";
             }
 
-            return RedirectToPage();
+            return RedirectToPage("/Admin/MenuManagement");
         }
 
         private string GetImagePath(MenuItem item)

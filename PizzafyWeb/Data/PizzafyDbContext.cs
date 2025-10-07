@@ -15,6 +15,9 @@ namespace PizzafyWeb.Data
         public DbSet<MenuItem> MenuItems { get; set; }
         public DbSet<MenuPrice> MenuPrices { get; set; }
         public DbSet<Cart> Carts { get; set; }
+        public DbSet<Status> Statuses { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -103,6 +106,56 @@ namespace PizzafyWeb.Data
                       .WithMany()
                       .HasForeignKey(e => e.PriceId)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Configure Status entity
+            modelBuilder.Entity<Status>(entity =>
+            {
+                entity.HasKey(e => e.StatusId);
+                entity.HasIndex(e => e.StatusName).IsUnique();
+            });
+
+            // Configure Order entity
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.HasKey(e => e.OrderId);
+                entity.Property(e => e.TotalAmount).HasColumnType("decimal(10,2)");
+                entity.Property(e => e.DeliveryFee).HasColumnType("decimal(10,2)");
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Status)
+                    .WithMany(s => s.Orders)
+                    .HasForeignKey(e => e.StatusId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.ModifiedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ModifiedBy)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Configure OrderItem entity
+            modelBuilder.Entity<OrderItem>(entity =>
+            {
+                entity.HasKey(e => e.OrderItemId);
+                entity.Property(e => e.UnitPrice).HasColumnType("decimal(10,2)");
+                entity.Property(e => e.Subtotal).HasColumnType("decimal(10,2)").HasColumnName("line_total");
+
+                entity.ToTable("order_detail");
+
+                entity.HasOne(e => e.Order)
+                    .WithMany(o => o.OrderItems)
+                    .HasForeignKey(e => e.OrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.MenuPrice)
+                    .WithMany()
+                    .HasForeignKey(e => e.PriceId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

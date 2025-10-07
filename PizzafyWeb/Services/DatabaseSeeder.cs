@@ -3,6 +3,7 @@ using PizzafyWeb.Data;
 using PizzafyWeb.Models;
 using System.Security.Cryptography;
 using System.Text;
+using System.Data;
 
 namespace PizzafyWeb.Services
 {
@@ -19,8 +20,11 @@ namespace PizzafyWeb.Services
         {
             try
             {
-                // Check if database exists and create if not
+                // Ensure database exists (no migrations dependency)
                 await _context.Database.EnsureCreatedAsync();
+
+                // Align schema change: order_items -> order_detail
+                await EnsureOrderDetailSchemaAsync();
 
                 // Seed Categories
                 if (!await _context.Categories.AnyAsync())
@@ -33,6 +37,22 @@ namespace PizzafyWeb.Services
                     };
 
                     _context.Categories.AddRange(categories);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Seed Statuses
+                if (!await _context.Statuses.AnyAsync())
+                {
+                    var statuses = new List<Status>
+                    {
+                        new Status { StatusName = "Pending", Description = "Order has been placed and is awaiting preparation" },
+                        new Status { StatusName = "Preparing", Description = "Order is currently being prepared" },
+                        new Status { StatusName = "Ready", Description = "Order is ready for pickup/delivery" },
+                        new Status { StatusName = "Completed", Description = "Order has been completed" },
+                        new Status { StatusName = "Cancelled", Description = "Order has been cancelled" }
+                    };
+
+                    _context.Statuses.AddRange(statuses);
                     await _context.SaveChangesAsync();
                 }
 
@@ -276,6 +296,58 @@ namespace PizzafyWeb.Services
             {
                 // Log the exception in production
                 Console.WriteLine($"Error seeding database: {ex.Message}");
+            }
+        }
+
+        private async Task EnsureOrderDetailSchemaAsync()
+        {
+            try
+            {
+                await _context.Database.OpenConnectionAsync();
+                using var cmd = _context.Database.GetDbConnection().CreateCommand();
+
+                // Check existence
+                cmd.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'order_detail'";
+                var detailExists = Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+
+                cmd.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'order_items'";
+                var itemsExists = Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+
+                if (!detailExists && itemsExists)
+                {
+                    // Rename table and columns to match requested schema
+                    cmd.CommandText = "RENAME TABLE order_items TO order_detail";
+                    await cmd.ExecuteNonQueryAsync();
+
+                    cmd.CommandText = "ALTER TABLE order_detail CHANGE COLUMN order_item_id order_detail_id INT NOT NULL AUTO_INCREMENT";
+                    await cmd.ExecuteNonQueryAsync();
+
+                    cmd.CommandText = "ALTER TABLE order_detail CHANGE COLUMN subtotal line_total DECIMAL(10,2) NOT NULL";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                else if (!detailExists && !itemsExists)
+                {
+                    // Fresh create using requested DDL
+                    cmd.CommandText = @"CREATE TABLE IF NOT EXISTS order_detail (
+                        order_detail_id INT AUTO_INCREMENT PRIMARY KEY,
+                        order_id INT NOT NULL,
+                        price_id INT NOT NULL,
+                        quantity INT NOT NULL,
+                        unit_price DECIMAL(10,2) NOT NULL,
+                        line_total DECIMAL(10,2) NOT NULL,
+                        FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+                        FOREIGN KEY (price_id) REFERENCES menu_price(price_id)
+                    ) ENGINE=InnoDB";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Schema alignment for order_detail failed: {ex.Message}");
+            }
+            finally
+            {
+                await _context.Database.CloseConnectionAsync();
             }
         }
 

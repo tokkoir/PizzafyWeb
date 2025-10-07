@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="preload" href="~/images/product-placeholder.svg" as="image" type="image/svg+xml" />
+    
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="admin-body">
     <div class="admin-container">
@@ -17,21 +19,56 @@
             <!-- Logo Section -->
             <div class="sidebar-header">
                 <div class="logo-container">
-                    <img src="~/images/logoWhiteOutline.png" alt="Pizzafy Logo" class="logo-image" />
+                    <img src="~/images/logo.png" alt="Pizzafy Logo" class="logo-image" />
                     <span class="logo-text">Pizzafy</span>
                 </div>
             </div>
 
             <!-- Admin Profile -->
             <div class="admin-profile">
+                @{
+                    var uname = User?.Identity?.Name ?? string.Empty;
+                    string initials = "AD";
+                    if (!string.IsNullOrWhiteSpace(uname))
+                    {
+                        var parts = uname.Split(new[] { '.', '_', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length >= 2 && parts[0].Length > 0 && parts[1].Length > 0)
+                        {
+                            initials = $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[1][0])}";
+                        }
+                        else
+                        {
+                            var chars = new string(uname.Where(char.IsLetterOrDigit).Take(2).Select(c => char.ToUpperInvariant(c)).ToArray());
+                            if (!string.IsNullOrEmpty(chars))
+                            {
+                                initials = chars.Length == 1 ? chars + " " : chars;
+                            }
+                        }
+                    }
+                }
                 <div class="profile-avatar">
-                    <span class="avatar-text">AD</span>
+                    <span class="avatar-text">@initials</span>
                 </div>
-                <span class="profile-name">Administrator</span>
+                <div class="profile-name">
+                    <div class="profile-username">@User?.Identity?.Name</div>
+                    <div class="profile-role">@((User?.IsInRole("Admin") ?? false) ? "Administrator" : "User")</div>
+                </div>
             </div>
 
             <!-- Navigation Menu -->
             <nav class="sidebar-nav">
+                <!-- Dashboard above MANAGE -->
+                <div class="nav-section">
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="/Admin/Dashboard" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Dashboard" ? "active" : "")">
+                                <i class="fas fa-gauge-high"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
                 <div class="nav-section">
                     <h4 class="nav-section-title">MANAGE</h4>
                     <ul class="nav-list">
@@ -50,7 +87,7 @@
                         <li class="nav-item">
                             <a href="/Admin/Orders" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Orders" ? "active" : "")">
                                 <i class="fas fa-truck"></i>
-                                <span>Order Status</span>
+                                <span>Orders</span>
                             </a>
                         </li>
                     </ul>

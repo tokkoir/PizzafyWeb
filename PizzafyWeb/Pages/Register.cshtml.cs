@@ -77,7 +77,7 @@ namespace PizzafyWeb.Pages
                 TempData["SuccessMessage"] = "Account created successfully! Please login with your credentials.";
                 return RedirectToPage("/Login");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 TempData["ErrorMessage"] = "An error occurred while creating your account. Please try again.";
                 // Log the exception here if you have logging configured

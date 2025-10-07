@@ -50,13 +50,13 @@
 .logo-image {
     width: 32px;
     height: 32px;
-    filter: brightness(0) saturate(100%) invert(11%) sepia(73%) saturate(2542%) hue-rotate(346deg) brightness(96%) contrast(93%);
+    filter: none; /* keep original logo colors */
 }
 
 .logo-text {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--admin-red);
+    color: #333; /* neutral, no brand color */
 }
 
 .admin-profile {
@@ -86,6 +86,20 @@
 .profile-name {
     font-weight: 600;
     color: #333;
+}
+
+/* Ensure profile name shows username bold, role normal gray */
+.profile-username {
+    font-weight: 600;
+    color: #333;
+    line-height: 1.1;
+}
+
+.profile-role {
+    font-weight: 400; /* not bold */
+    color: var(--admin-dark-gray); /* gray */
+    font-size: 0.9rem;
+    line-height: 1.1;
 }
 
 .sidebar-nav {
@@ -980,6 +994,113 @@
     width: 100%;
 }
 
+/* Admin Orders Page Styles */
+.admin-page-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.admin-page-subtitle {
+    color: var(--admin-dark-gray);
+    margin: 0;
+}
+
+.admin-content-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px var(--admin-shadow);
+    border: 1px solid var(--admin-border);
+}
+
+.admin-content-card .card-header {
+    background-color: var(--admin-red);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+    padding: 1rem 1.5rem;
+}
+
+.admin-content-card .card-body {
+    padding: 1.5rem;
+}
+
+/* Order Statistics Cards */
+.admin-stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #8c1007;
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s ease;
+}
+
+.admin-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.admin-stat-card.pending {
+    border-left-color: #ffc107;
+}
+
+.admin-stat-card.preparing {
+    border-left-color: #17a2b8;
+}
+
+.admin-stat-card.ready {
+    border-left-color: #007bff;
+}
+
+.admin-stat-card.completed {
+    border-left-color: #28a745;
+}
+
+.stat-icon {
+    font-size: 2rem;
+    margin-right: 15px;
+    opacity: 0.8;
+    color: #8c1007;
+}
+
+.admin-stat-card.pending .stat-icon {
+    color: #ffc107;
+}
+
+.admin-stat-card.preparing .stat-icon {
+    color: #17a2b8;
+}
+
+.admin-stat-card.ready .stat-icon {
+    color: #007bff;
+}
+
+.admin-stat-card.completed .stat-icon {
+    color: #28a745;
+}
+
+.stat-content h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.stat-content p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .admin-sidebar {
@@ -1046,5 +1167,25 @@
     .btn {
         width: 100%;
         margin-bottom: 0.5rem;
+    }
+
+    /* Admin orders responsive */
+    .admin-page-header .d-flex {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .admin-stats-mini {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .admin-content-card .card-body {
+        padding: 1rem;
     }
 }

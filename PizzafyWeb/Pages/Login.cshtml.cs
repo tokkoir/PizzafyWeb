@@ -85,7 +85,7 @@ namespace PizzafyWeb.Pages
                     return RedirectToPage("/Index");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 TempData["ErrorMessage"] = "An error occurred during login. Please try again.";
                 // Log the exception here if you have logging configured
