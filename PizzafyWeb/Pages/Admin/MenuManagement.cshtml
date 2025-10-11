@@ -5,6 +5,37 @@
     Layout = "_AdminLayout";
 }
 
+@functions {
+    protected int GetSizeSortKey(string size)
+    {
+        var s = (size ?? string.Empty).Trim().ToLowerInvariant();
+        // Named sizes first
+        if (s.Contains("extra small") || s == "xs" || s.Contains("x-small")) return 0;
+        if (s.Contains("small")) return 1;
+        if (s.Contains("medium") || s == "md") return 2;
+        if (s == "large") return 3;
+        if (s.Contains("x-large") || s.Contains("extra large") || s == "xl") return 4;
+        if (s.Contains("xx-large") || s.Contains("2x") || s == "xxl") return 5;
+
+        // Numeric sizes like "9 in", "12 in", "14 in", or with units
+        var m = System.Text.RegularExpressions.Regex.Match(s, @"(\d+\.?\d*)\s*(in|inch|inches|cm|mm|oz)");
+        if (m.Success && decimal.TryParse(m.Groups[1].Value, out var v))
+        {
+            return 100 + (int)(v * 10); // order ascending by numeric value
+        }
+
+        // Plain numeric
+        var m2 = System.Text.RegularExpressions.Regex.Match(s, @"^(\d+)$");
+        if (m2.Success && int.TryParse(m2.Groups[1].Value, out var n))
+        {
+            return 100 + n;
+        }
+
+        // Unknowns at the end
+        return 1000;
+    }
+}
+
 <div class="admin-content">
     <div class="admin-header">
         <h1 class="page-title">Menu Management</h1>
@@ -49,9 +80,33 @@
         </div>
 
         <div class="table-body" id="productsTableBody">
-            @foreach (var item in Model.MenuItems)
+            @{
+                var groupedItems = Model.MenuItems
+                    .GroupBy(m => (m.ItemName ?? string.Empty).Trim(), StringComparer.OrdinalIgnoreCase)
+                    .Select(g => new
+                    {
+                        ItemName = g.Key,
+                        RepresentativeId = g.First().MenuItemId,
+                        CategoryName = g.Select(x => x.Category.CategoryName)
+                                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                                        .Count() > 1
+                                        ? "Multiple"
+                                        : g.First().Category.CategoryName,
+                        Sizes = g.SelectMany(x => x.MenuPrices.Select(mp => mp.Size.SizeName))
+                                 .Distinct()
+                                 .ToList(),
+                        Prices = g.SelectMany(x => x.MenuPrices.Select(mp => mp.UnitPrice))
+                                  .ToList()
+                    })
+                    .OrderBy(x => x.CategoryName)
+                    .ThenBy(x => x.ItemName)
+                    .ToList();
+            }
+
+            @foreach (var item in groupedItems)
             {
-                <div class="table-row" data-name="@item.ItemName.ToLower()" data-category="@item.Category.CategoryName">
+                var orderedSizes = item.Sizes.OrderBy(s => GetSizeSortKey(s)).ThenBy(s => s);
+                <div class="table-row" data-name="@item.ItemName.ToLower()" data-category="@item.CategoryName">
                     <div class="table-cell product-cell">
                         <div class="product-info">
                             <span class="product-name">@item.ItemName</span>
@@ -59,16 +114,16 @@
                     </div>
 
                     <div class="table-cell category-cell">
-                        <span class="category-badge">@item.Category.CategoryName</span>
+                        <span class="category-badge">@item.CategoryName</span>
                     </div>
 
                     <div class="table-cell size-cell">
-                        @if (item.MenuPrices.Any())
+                        @if (orderedSizes.Any())
                         {
                             <div class="size-info">
-                                @foreach (var price in item.MenuPrices.OrderBy(p => p.UnitPrice))
+                                @foreach (var sizeName in orderedSizes)
                                 {
-                                    <span class="size-badge">@price.Size.SizeName</span>
+                                    <span class="size-badge">@sizeName</span>
                                 }
                             </div>
                         }
@@ -79,17 +134,17 @@
                     </div>
 
                     <div class="table-cell price-cell">
-                        @if (item.MenuPrices.Any())
+                        @if (item.Prices.Any())
                         {
-                            if (item.MenuPrices.Count == 1)
+                            var minPrice = item.Prices.Min();
+                            var maxPrice = item.Prices.Max();
+                            if (minPrice == maxPrice)
                             {
-                                <span class="price">₱@(item.MenuPrices.First().UnitPrice.ToString("F2"))</span>
+                                <span class="price">₱@minPrice.ToString("F2")</span>
                             }
                             else
                             {
-                                var minPrice = item.MenuPrices.Min(p => p.UnitPrice);
-                                var maxPrice = item.MenuPrices.Max(p => p.UnitPrice);
-                                <span class="price">₱@(minPrice.ToString("F2")) - ₱@(maxPrice.ToString("F2"))</span>
+                                <span class="price">₱@minPrice.ToString("F2") - ₱@maxPrice.ToString("F2")</span>
                             }
                         }
                         else
@@ -103,12 +158,12 @@
                     </div>
 
                     <div class="table-cell actions-cell">
-                        <a href="/Admin/EditProduct?id=@item.MenuItemId" class="btn-action btn-edit">
+                        <a href="/Admin/EditProduct?id=@item.RepresentativeId" class="btn-action btn-edit">
                             <i class="fas fa-edit"></i>
                             Edit
                         </a>
                         <form method="post" style="display: inline;">
-                            <button type="submit" asp-page-handler="Delete" asp-route-id="@item.MenuItemId"
+                            <button type="submit" asp-page-handler="Delete" asp-route-id="@item.RepresentativeId"
                                     class="btn-action btn-disable"
                                     onclick="return confirm('Are you sure you want to delete this product?')">
                                 <i class="fas fa-trash"></i>

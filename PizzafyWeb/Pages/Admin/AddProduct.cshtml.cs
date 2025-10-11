@@ -6,6 +6,7 @@ using PizzafyWeb.Data;
 using PizzafyWeb.Models;
 using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 
 namespace PizzafyWeb.Pages.Admin
 {
@@ -49,7 +50,11 @@ namespace PizzafyWeb.Pages.Admin
         {
             try
             {
-                Categories = await _context.Categories.ToListAsync();
+                var cats = await _context.Categories.ToListAsync();
+                Categories = cats
+                    .OrderBy(c => GetCategorySortKey(c.CategoryName))
+                    .ThenBy(c => c.CategoryName)
+                    .ToList();
                 
                 // Initialize with empty sizes (will be populated by JavaScript when category is selected)
                 AvailableSizes = new List<Size>();
@@ -67,8 +72,12 @@ namespace PizzafyWeb.Pages.Admin
             {
                 var sizes = await _context.Sizes
                     .Where(s => s.CategoryId == categoryId)
-                    .OrderBy(s => s.SizeName)
                     .ToListAsync();
+
+                sizes = sizes
+                    .OrderBy(s => GetSizeSortKey(s.SizeName))
+                    .ThenBy(s => s.SizeName)
+                    .ToList();
 
                 return new JsonResult(sizes.Select(s => new { 
                     sizeId = s.SizeId, 
@@ -85,7 +94,11 @@ namespace PizzafyWeb.Pages.Admin
         {
             try
             {
-                Categories = await _context.Categories.ToListAsync();
+                var cats = await _context.Categories.ToListAsync();
+                Categories = cats
+                    .OrderBy(c => GetCategorySortKey(c.CategoryName))
+                    .ThenBy(c => c.CategoryName)
+                    .ToList();
                 ModelState.Remove("MenuItem.Category");
                 ModelState.Remove("MenuItem.User");
                 ModelState.Remove("MenuItem.MenuPrices");
@@ -116,10 +129,13 @@ namespace PizzafyWeb.Pages.Admin
 
                 if (!ModelState.IsValid)
                 {
-                    AvailableSizes = await _context.Sizes
+                    var sizes = await _context.Sizes
                         .Where(s => s.CategoryId == CategoryId)
-                        .OrderBy(s => s.SizeName)
                         .ToListAsync();
+                    AvailableSizes = sizes
+                        .OrderBy(s => GetSizeSortKey(s.SizeName))
+                        .ThenBy(s => s.SizeName)
+                        .ToList();
                     return Page();
                 }
 
@@ -143,19 +159,25 @@ namespace PizzafyWeb.Pages.Admin
                     if (!allowedExtensions.Contains(fileExtension))
                     {
                         ModelState.AddModelError("ImageFile", "Please upload a valid image file (JPG, PNG, GIF, WebP).");
-                        AvailableSizes = await _context.Sizes
+                        var sizes = await _context.Sizes
                             .Where(s => s.CategoryId == CategoryId)
-                            .OrderBy(s => s.SizeName)
                             .ToListAsync();
+                        AvailableSizes = sizes
+                            .OrderBy(s => GetSizeSortKey(s.SizeName))
+                            .ThenBy(s => s.SizeName)
+                            .ToList();
                         return Page();
                     }
                     if (ImageFile.Length > 5 * 1024 * 1024)
                     {
                         ModelState.AddModelError("ImageFile", "Image file size must be less than 5MB.");
-                        AvailableSizes = await _context.Sizes
+                        var sizes = await _context.Sizes
                             .Where(s => s.CategoryId == CategoryId)
-                            .OrderBy(s => s.SizeName)
                             .ToListAsync();
+                        AvailableSizes = sizes
+                            .OrderBy(s => GetSizeSortKey(s.SizeName))
+                            .ThenBy(s => s.SizeName)
+                            .ToList();
                         return Page();
                     }
                     var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -200,13 +222,20 @@ namespace PizzafyWeb.Pages.Admin
                 ModelState.AddModelError("", $"An error occurred while adding the product: {ex.Message}");
                 try
                 {
-                    Categories = await _context.Categories.ToListAsync();
+                    var cats = await _context.Categories.ToListAsync();
+                    Categories = cats
+                        .OrderBy(c => GetCategorySortKey(c.CategoryName))
+                        .ThenBy(c => c.CategoryName)
+                        .ToList();
                     if (CategoryId > 0)
                     {
-                        AvailableSizes = await _context.Sizes
+                        var sizes = await _context.Sizes
                             .Where(s => s.CategoryId == CategoryId)
-                            .OrderBy(s => s.SizeName)
                             .ToListAsync();
+                        AvailableSizes = sizes
+                            .OrderBy(s => GetSizeSortKey(s.SizeName))
+                            .ThenBy(s => s.SizeName)
+                            .ToList();
                     }
                 }
                 catch
@@ -216,6 +245,47 @@ namespace PizzafyWeb.Pages.Admin
                 }
                 return Page();
             }
+        }
+
+        private static int GetCategorySortKey(string? categoryName)
+        {
+            var n = (categoryName ?? string.Empty).Trim().ToLowerInvariant();
+            return n switch
+            {
+                "pizza" => 0,
+                "sides" => 1,
+                "beverages" => 2,
+                _ => 100
+            };
+        }
+
+        private static int GetSizeSortKey(string? size)
+        {
+            var s = (size ?? string.Empty).Trim().ToLowerInvariant();
+            // Named sizes first
+            if (s.Contains("extra small") || s == "xs" || s.Contains("x-small")) return 0;
+            if (s.Contains("small")) return 1;
+            if (s.Contains("medium") || s == "md") return 2;
+            if (s == "large") return 3;
+            if (s.Contains("x-large") || s.Contains("extra large") || s == "xl") return 4;
+            if (s.Contains("xx-large") || s.Contains("2x") || s == "xxl") return 5;
+
+            // Numeric sizes like "9 in", "12 in", "14 in", or with oz
+            var m = Regex.Match(s, @"(\d+\.?\d*)\s*(in|inch|inches|cm|mm|oz)");
+            if (m.Success && decimal.TryParse(m.Groups[1].Value, out var v))
+            {
+                return 100 + (int)(v * 10); // ascending by numeric value
+            }
+
+            // Plain numeric fallback
+            var m2 = Regex.Match(s, @"^(\d+)$");
+            if (m2.Success && int.TryParse(m2.Groups[1].Value, out var n))
+            {
+                return 100 + n;
+            }
+
+            // Unknowns at the end
+            return 1000;
         }
     }
 }

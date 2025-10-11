@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model PizzafyWeb.Pages.Admin.DashboardModel
 @{
     ViewData["Title"] = "Dashboard";
@@ -16,41 +16,749 @@
     </div>
 </div>
 
-<div class="row g-3">
-    <div class="col-md-3">
-        <div class="admin-stat-card">
-            <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
-            <div class="stat-content">
-                <h3>Total Orders</h3>
-                <p class="mb-0 text-muted">View all orders in Orders tab</p>
+<!-- Date Range Filter -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Date Range Filter</h5>
             </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="admin-stat-card">
-            <div class="stat-icon"><i class="fas fa-pizza-slice"></i></div>
-            <div class="stat-content">
-                <h3>Menu</h3>
-                <p class="mb-0 text-muted">Manage your products</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="admin-stat-card">
-            <div class="stat-icon"><i class="fas fa-truck"></i></div>
-            <div class="stat-content">
-                <h3>Order Status</h3>
-                <p class="mb-0 text-muted">Track active orders</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="admin-stat-card">
-            <div class="stat-icon"><i class="fas fa-users"></i></div>
-            <div class="stat-content">
-                <h3>Customers</h3>
-                <p class="mb-0 text-muted">Customer insights</p>
+            <div class="card-body">
+                <form method="post" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label asp-for="StartDate" class="form-label">Start Date</label>
+                        <input asp-for="StartDate" class="form-control" type="date" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="EndDate" class="form-label">End Date</label>
+                        <input asp-for="EndDate" class="form-control" type="date" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-1"></i>Apply Filter
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Stock Cards -->
+<div class="row g-3 mb-4">
+    @{
+        var categories = Model.ProductsByCategory;
+        var totalProducts = categories.Sum(c => c.ProductCount);
+        var stockCards = new List<dynamic> {
+            new { title = "Pizza Items", count = categories.FirstOrDefault(c => c.CategoryName.Equals("Pizza", StringComparison.OrdinalIgnoreCase))?.ProductCount ?? 0, color = "primary", icon = "fas fa-pizza-slice" },
+            new { title = "Sides Items", count = categories.FirstOrDefault(c => c.CategoryName.Equals("Sides", StringComparison.OrdinalIgnoreCase))?.ProductCount ?? 0, color = "warning", icon = "fas fa-utensils" },
+            new { title = "Beverage Items", count = categories.FirstOrDefault(c => c.CategoryName.Equals("Beverages", StringComparison.OrdinalIgnoreCase))?.ProductCount ?? 0, color = "success", icon = "fas fa-glass-water" },
+            new { title = "Total Items", count = totalProducts, color = "danger", icon = "fas fa-warehouse" }
+        };
+    }
+    
+    @foreach (var card in stockCards)
+    {
+        <div class="col-lg-3 col-md-6">
+            <div class="stock-card stock-card-@card.color">
+                <div class="stock-card-content">
+                    <div class="stock-title">@card.title</div>
+                    <div class="stock-number">@card.count</div>
+                </div>
+                <div class="stock-icon">
+                    <i class="@card.icon"></i>
+                </div>
+                <div class="stock-bg-circle"></div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Sales Overview -->
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="dashboard-section-title">
+            <i class="fas fa-chart-line me-2 text-danger"></i>Sales Overview
+        </h3>
+        <button class="btn btn-danger btn-sm">
+            <i class="fas fa-print me-1"></i>Print Report
+        </button>
+    </div>
+    
+    <div class="row g-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="sales-card">
+                <div class="sales-icon text-danger">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="sales-content">
+                    <div class="sales-title">Selected Period Sales</div>
+                    <div class="sales-amount">₱ @Model.SelectedPeriodSales.ToString("N2")</div>
+                    <div class="sales-period">@Model.StartDate.ToString("MMM dd") - @Model.EndDate.ToString("MMM dd")</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="sales-card">
+                <div class="sales-icon text-warning">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="sales-content">
+                    <div class="sales-title">Sales (Last 24 Hours)</div>
+                    <div class="sales-amount">₱ @Model.Sales24Hours.ToString("N2")</div>
+                    <div class="sales-period">Past 24 hours</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="sales-card">
+                <div class="sales-icon text-purple">
+                    <i class="fas fa-calendar-week"></i>
+                </div>
+                <div class="sales-content">
+                    <div class="sales-title">This Week's Sales</div>
+                    <div class="sales-amount">₱ @Model.SalesThisWeek.ToString("N2")</div>
+                    <div class="sales-period">Current week</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="sales-card">
+                <div class="sales-icon text-success">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="sales-content">
+                    <div class="sales-title">This Month's Sales</div>
+                    <div class="sales-amount">₱ @Model.SalesThisMonth.ToString("N2")</div>
+                    <div class="sales-period">Current month</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Purchase Details -->
+<div class="mb-4">
+    <h3 class="dashboard-section-title mb-3">
+        <i class="fas fa-shopping-cart me-2 text-danger"></i>Purchase Details
+    </h3>
+    
+    <div class="purchase-details-container">
+        <div class="purchase-header">
+            <div class="purchase-title">Customer Purchases</div>
+            <div class="search-container">
+                <input type="text" class="form-control" placeholder="Search customer..." id="customerSearch">
+            </div>
+        </div>
+        
+        <div class="customer-section">
+            <div class="customer-header">CUSTOMER NAME</div>
+            
+            <div class="customer-entries">
+                @if (Model.CustomerPurchases.Any())
+                {
+                    var groupedCustomers = Model.CustomerPurchases.GroupBy(p => p.CustomerName).Take(10);
+                    foreach (var purchase in groupedCustomers)
+                    {
+                        var customerPurchase = purchase.First();
+                        <div class="customer-entry" onclick="viewCustomerOrders('@customerPurchase.CustomerName')">
+                            <i class="fas fa-user customer-icon"></i>
+                            <span class="customer-link">@customerPurchase.CustomerName</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-customers">
+                        <i class="fas fa-receipt fa-2x mb-2 text-muted"></i>
+                        <p class="text-muted">No purchases found for the selected date range</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Orders Modal -->
+<div class="modal fade" id="customerOrdersModal" tabindex="-1" aria-labelledby="customerOrdersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerOrdersModalLabel">
+                    <i class="fas fa-user me-2"></i><span id="customerModalName"></span> - Order History
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="customerOrdersContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-success" onclick="exportCustomerOrders()">
+                    <i class="fas fa-download me-1"></i>Export Customer Orders
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDetailsModalLabel">
+                    <i class="fas fa-receipt me-2"></i>Order Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="orderDetailsContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-success" onclick="exportOrderDetails()">
+                    <i class="fas fa-download me-1"></i>Export Order
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .stock-card {
+            background: linear-gradient(135deg, var(--stock-color-1), var(--stock-color-2));
+            border-radius: 20px;
+            padding: 24px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            height: 160px;
+        }
+        
+        .stock-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stock-card-primary {
+            --stock-color-1: #4f7df3;
+            --stock-color-2: #3b6af0;
+        }
+        
+        .stock-card-warning {
+            --stock-color-1: #f5b942;
+            --stock-color-2: #f3a934;
+        }
+        
+        .stock-card-success {
+            --stock-color-1: #28c76f;
+            --stock-color-2: #1fad5f;
+        }
+        
+        .stock-card-danger {
+            --stock-color-1: #ea5455;
+            --stock-color-2: #e63946;
+        }
+        
+        .stock-card-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .stock-title {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        
+        .stock-number {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .stock-link {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .stock-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 32px;
+            opacity: 0.3;
+            z-index: 1;
+        }
+        
+        .stock-bg-circle {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: -20px;
+            right: -30px;
+            z-index: 1;
+        }
+        
+        .dashboard-section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .sales-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #f0f0f0;
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .sales-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .sales-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+        
+        .sales-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .sales-amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .sales-period {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .text-purple {
+            color: #9c27b0 !important;
+        }
+        
+        .purchase-details-container {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #f0f0f0;
+            overflow: hidden;
+        }
+        
+        .purchase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .purchase-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .search-container {
+            width: 300px;
+        }
+        
+        .search-container .form-control {
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        
+        .search-container .form-control:focus {
+            border-color: #4f7df3;
+            box-shadow: 0 0 0 0.2rem rgba(79, 125, 243, 0.25);
+        }
+        
+        .customer-section {
+            padding: 0;
+        }
+        
+        .customer-header {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            padding: 16px 24px 8px 24px;
+            background: #fafafa;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .customer-entries {
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .customer-entry {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            border-bottom: 1px solid #f8f9fa;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .customer-entry:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .customer-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .customer-icon {
+            color: #4f7df3;
+            margin-right: 12px;
+            font-size: 16px;
+        }
+        
+        .customer-link {
+            color: #4f7df3;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .customer-link:hover {
+            text-decoration: underline;
+        }
+        
+        .no-customers {
+            text-align: center;
+            padding: 40px 24px;
+        }
+        
+        /* Remove old styles */
+        .purchase-details-card,
+        .customer-name-header,
+        .customer-list,
+        .customer-item,
+        .customer-avatar,
+        .customer-info,
+        .customer-name,
+        .customer-meta,
+        .customer-total {
+            display: none;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        let currentOrderData = null;
+        let currentCustomerOrders = null;
+
+        // Customer search functionality
+        document.getElementById('customerSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const customerEntries = document.querySelectorAll('.customer-entry');
+            
+            customerEntries.forEach(entry => {
+                const customerName = entry.querySelector('.customer-link').textContent.toLowerCase();
+                if (customerName.includes(searchTerm)) {
+                    entry.style.display = 'flex';
+                } else {
+                    entry.style.display = 'none';
+                }
+            });
+        });
+
+        async function viewCustomerOrders(customerName) {
+            const modalEl = document.getElementById('customerOrdersModal');
+            const modal = new bootstrap.Modal(modalEl);
+            const content = document.getElementById('customerOrdersContent');
+            document.getElementById('customerModalName').textContent = customerName;
+            
+            // Show loading
+            content.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading orders...</p>
+                </div>
+            `;
+            
+            modal.show();
+
+            // Filter customer orders from existing data (camelCase for JS)
+            const customerOrders = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.CustomerPurchases,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }
+            ));
+            const orders = customerOrders.filter(order => order.customerName === customerName);
+            currentCustomerOrders = { customerName, orders };
+            
+            if (orders.length === 0) {
+                content.innerHTML = `
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-receipt fa-3x mb-3"></i>
+                        <h5>No Orders Found</h5>
+                        <p>This customer has no orders in the selected date range.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (orders.length === 1) {
+                // Directly open details for single order
+                modal.hide();
+                const orderId = orders[0].orderId;
+                const handler = () => {
+                    modalEl.removeEventListener('hidden.bs.modal', handler);
+                    viewOrderDetails(orderId);
+                };
+                modalEl.addEventListener('hidden.bs.modal', handler);
+                return;
+            }
+
+            // Multiple orders: show simple list of order numbers and dates
+            content.innerHTML = `
+                <div class="mb-3 text-muted">Select an order to view details</div>
+                <div class="list-group">
+                    ${orders
+                        .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
+                        .map(o => `
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="openOrderFromCustomerModal(${o.orderId}); return false;">
+                                <div>
+                                    <strong class="text-primary">#${o.orderId}</strong>
+                                    <div>
+                                        <small class="text-muted">
+                                            ${new Date(o.orderDate).toLocaleDateString()} ${new Date(o.orderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </small>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </a>
+                        `).join('')}
+                </div>
+            `;
+        }
+
+        function openOrderFromCustomerModal(orderId) {
+            const modalEl = document.getElementById('customerOrdersModal');
+            const instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) {
+                const handler = () => {
+                    modalEl.removeEventListener('hidden.bs.modal', handler);
+                    viewOrderDetails(orderId);
+                };
+                modalEl.addEventListener('hidden.bs.modal', handler);
+                instance.hide();
+            } else {
+                viewOrderDetails(orderId);
+            }
+        }
+
+        function getStatusBadge(status) {
+            const s = (status || '').toLowerCase();
+            let cls;
+            switch (s) {
+                case 'pending': cls = 'bg-warning text-dark'; break;
+                case 'confirmed': cls = 'bg-info text-white'; break;
+                case 'preparing': cls = 'bg-primary text-white'; break;
+                case 'ready': cls = 'bg-secondary text-white'; break;
+                case 'completed': cls = 'bg-success text-white'; break;
+                case 'cancelled': cls = 'bg-danger text-white'; break;
+                default: cls = 'bg-light text-dark'; break;
+            }
+            return `<span class="badge ${cls}">${status}</span>`;
+        }
+
+        async function viewOrderDetails(orderId) {
+            const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+            const content = document.getElementById('orderDetailsContent');
+            
+            // Show loading
+            content.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading order details...</p>
+                </div>
+            `;
+            
+            modal.show();
+
+            try {
+                const response = await fetch(`?handler=OrderDetails&orderId=${orderId}`);
+                if (!response.ok) throw new Error('Failed to load order details');
+                
+                const order = await response.json();
+                currentOrderData = order;
+                
+                content.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-user me-2"></i>Customer Information</h6>
+                            <div class="mb-3">
+                                <strong>Name:</strong> ${order.customerName}<br/>
+                                <strong>Phone:</strong> ${order.customerPhone || 'N/A'}<br/>
+                                <strong>Address:</strong> ${order.deliveryAddress || 'N/A'}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-info-circle me-2"></i>Order Information</h6>
+                            <div class="mb-3">
+                                <strong>Order ID:</strong> #${order.orderId}<br/>
+                                <strong>Date:</strong> ${order.orderDate}<br/>
+                                <strong>Status:</strong> <span class="badge bg-info">${order.status}</span><br/>
+                                <strong>Payment:</strong> ${order.paymentMethod}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6><i class="fas fa-list me-2"></i>Order Items</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Size</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${order.items.map(item => `
+                                    <tr>
+                                        <td>${item.itemName}</td>
+                                        <td><span class="badge bg-secondary">${item.size}</span></td>
+                                        <td class="text-center">${item.quantity}</td>
+                                        <td class="text-end">₱${parseFloat(item.unitPrice).toFixed(2)}</td>
+                                        <td class="text-end">₱${parseFloat(item.subtotal).toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="4">Delivery Fee:</th>
+                                    <th class="text-end">₱${parseFloat(order.deliveryFee).toFixed(2)}</th>
+                                </tr>
+                                <tr class="table-success">
+                                    <th colspan="4">Total Amount:</th>
+                                    <th class="text-end">₱${parseFloat(order.totalAmount).toFixed(2)}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Failed to load order details. Please try again.
+                    </div>
+                `;
+            }
+        }
+
+        function exportPurchases() {
+            const purchases = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                Model.CustomerPurchases,
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }
+            ));
+            const csv = generatePurchaseCSV(purchases);
+            downloadCSV(csv, `purchases_${new Date().toISOString().split('T')[0]}.csv`);
+        }
+
+        function exportCustomerOrders() {
+            if (!currentCustomerOrders) return;
+            
+            const csv = generatePurchaseCSV(currentCustomerOrders.orders);
+            downloadCSV(csv, `${currentCustomerOrders.customerName.replace(/\s+/g, '_')}_orders_${new Date().toISOString().split('T')[0]}.csv`);
+        }
+
+        function exportOrderDetails() {
+            if (!currentOrderData) return;
+            
+            const csv = generateOrderCSV(currentOrderData);
+            downloadCSV(csv, `order_${currentOrderData.orderId}_${new Date().toISOString().split('T')[0]}.csv`);
+        }
+
+        function generatePurchaseCSV(purchases) {
+            const headers = ['Order ID', 'Customer Name', 'Order Date', 'Total Amount', 'Status', 'Payment Method'];
+            const rows = purchases.map(p => [
+                p.orderId,
+                p.customerName,
+                new Date(p.orderDate).toLocaleString(),
+                p.totalAmount,
+                p.status,
+                p.paymentMethod
+            ]);
+            
+            return [headers, ...rows].map(row => 
+                row.map(field => `"${field}"`).join(',')
+            ).join('\n');
+        }
+
+        function generateOrderCSV(order) {
+            const headers = ['Item Name', 'Size', 'Quantity', 'Unit Price', 'Subtotal'];
+            const rows = order.items.map(item => [
+                item.itemName,
+                item.size,
+                item.quantity,
+                item.unitPrice,
+                item.subtotal
+            ]);
+            
+            const csv = [headers, ...rows].map(row => 
+                row.map(field => `"${field}"`).join(',')
+            ).join('\n');
+            
+            return `Order #${order.orderId} - ${order.customerName}\n` +
+                   `Date: ${order.orderDate}\n` +
+                   `Status: ${order.status}\n` +
+                   `Payment: ${order.paymentMethod}\n\n` +
+                   csv +
+                   `\n\nDelivery Fee,,,,"${order.deliveryFee}"` +
+                   `\nTotal Amount,,,,"${order.totalAmount}"`;
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+    </script>
+}

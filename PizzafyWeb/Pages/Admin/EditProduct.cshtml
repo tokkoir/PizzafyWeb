@@ -33,7 +33,7 @@
                                             <label asp-for="CategoryId" class="form-label">Category *</label>
                                             <select asp-for="CategoryId" class="form-select" id="categorySelect">
                                                 <option value="0">Select a category</option>
-                                                @foreach (var category in Model.Categories)
+                                                @foreach (var category in Model.Categories.OrderBy(c => c.CategoryName.ToLower() == "pizza" ? 0 : c.CategoryName.ToLower() == "sides" ? 1 : c.CategoryName.ToLower() == "beverages" ? 2 : 100).ThenBy(c => c.CategoryName))
                                                 {
                                                     <option value="@category.CategoryId" data-category-name="@category.CategoryName" selected="@(category.CategoryId == Model.CategoryId)">@category.CategoryName</option>
                                                 }
@@ -155,6 +155,20 @@
 }
 @section Scripts {
     <script>
+        function getSizeSortKey(label) {
+            const s = (label || '').trim().toLowerCase();
+            if (s.includes('extra small') || s === 'xs' || s.includes('x-small')) return 0;
+            if (s.includes('small')) return 1;
+            if (s.includes('medium') || s === 'md') return 2;
+            if (s === 'large') return 3;
+            if (s.includes('x-large') || s.includes('extra large') || s === 'xl') return 4;
+            if (s.includes('xx-large') || s.includes('2x') || s === 'xxl') return 5;
+            const m = s.match(/(\d+\.?\d*)\s*(in|inch|inches|cm|mm|oz)/);
+            if (m) return 100 + Math.round(parseFloat(m[1]) * 10);
+            const m2 = s.match(/^(\d+)$/);
+            if (m2) return 100 + parseInt(m2[1]);
+            return 1000;
+        }
         document.getElementById('imageInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             const preview = document.getElementById('imagePreview');
@@ -174,7 +188,6 @@
         document.querySelector('input[name="ProductName"]').addEventListener('input', function() {
             document.getElementById('previewName').textContent = this.value || 'Product Name';
         });
-        // Description preview update
         document.querySelector('textarea[name="Description"]').addEventListener('input', function() {
             document.getElementById('previewDescription').textContent = this.value || 'No description';
         });
@@ -198,7 +211,13 @@
         async function loadSizesForCategory(categoryId) {
             try {
                 const response = await fetch(`/Admin/EditProduct?handler=Sizes&categoryId=${categoryId}`);
-                const sizes = await response.json();
+                let sizes = await response.json();
+                sizes = sizes.sort((a, b) => {
+                    const ak = getSizeSortKey(a.sizeName);
+                    const bk = getSizeSortKey(b.sizeName);
+                    if (ak !== bk) return ak - bk;
+                    return a.sizeName.localeCompare(b.sizeName);
+                });
                 const sizeSelect = document.getElementById('sizeSelect');
                 sizeSelect.innerHTML = '<option value="">Select a size</option>';
                 sizes.forEach(size => {

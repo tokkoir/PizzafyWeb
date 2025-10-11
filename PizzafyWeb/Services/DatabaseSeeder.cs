@@ -431,6 +431,18 @@ namespace PizzafyWeb.Services
                     cmd.CommandText = "UPDATE `user` SET account_status = 'active'";
                     try { await cmd.ExecuteNonQueryAsync(); } catch { /* ignore */ }
                 }
+
+                // Always ensure DB default is 'active'
+                try
+                {
+                    cmd.CommandText = "ALTER TABLE `user` MODIFY COLUMN account_status VARCHAR(20) NOT NULL DEFAULT 'active'";
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                catch { /* ignore if not supported or lacks permissions */ }
+
+                // Ensure all customers are active (admins may remain pending)
+                cmd.CommandText = "UPDATE `user` SET account_status = 'active' WHERE LOWER(user_type) = 'customer' AND LOWER(account_status) = 'pending'";
+                try { await cmd.ExecuteNonQueryAsync(); } catch { /* ignore */ }
             }
             catch (Exception ex)
             {

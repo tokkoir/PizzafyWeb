@@ -24,6 +24,11 @@ namespace PizzafyWeb.Pages
 
         public List<CartItemViewModel> CartItems { get; set; } = new();
         public List<Payment> PaymentMethods { get; set; } = new();
+
+        // Selected cart rows to checkout; can come from query (GET) and is posted back (POST)
+        [BindProperty(SupportsGet = true)]
+        public List<int> SelectedCartIds { get; set; } = new();
+
         [BindProperty]
         [Required(ErrorMessage = "Please choose a payment method")]
         public int SelectedPaymentId { get; set; }
@@ -79,14 +84,22 @@ namespace PizzafyWeb.Pages
             PaymentMethods = await _context.Payments.OrderBy(p => p.PaymentId).ToListAsync();
             if (PaymentMethods.Any()) SelectedPaymentId = PaymentMethods.First().PaymentId;
 
-            // Load cart items
-            CartItems = await _context.Carts
+            // Load cart items; if specific cart IDs were selected, filter to those
+            var cartsQuery = _context.Carts
                 .Where(c => c.UserId == userId)
                 .Include(c => c.MenuPrice)
                     .ThenInclude(mp => mp.MenuItem)
                 .Include(c => c.MenuPrice)
                     .ThenInclude(mp => mp.Size)
                 .OrderBy(c => c.AddedAt)
+                .AsQueryable();
+
+            if (SelectedCartIds?.Any() == true)
+            {
+                cartsQuery = cartsQuery.Where(c => SelectedCartIds.Contains(c.CartId));
+            }
+
+            CartItems = await cartsQuery
                 .Select(c => new CartItemViewModel
                 {
                     CartId = c.CartId,
@@ -99,10 +112,10 @@ namespace PizzafyWeb.Pages
                 })
                 .ToListAsync();
 
-            // Redirect to cart if empty
+            // Redirect to cart if nothing to checkout
             if (!CartItems.Any())
             {
-                TempData["ErrorMessage"] = "Your cart is empty. Please add items before checking out.";
+                TempData["ErrorMessage"] = "Please select items to checkout.";
                 return RedirectToPage("/Cart");
             }
 
@@ -241,13 +254,21 @@ namespace PizzafyWeb.Pages
                 ModelState.Remove(nameof(GCashNumber));
             }
 
-            // Reload cart items for validation
-            CartItems = await _context.Carts
+            // Reload cart items for validation (filter to selected when provided)
+            var cartsQuery = _context.Carts
                 .Where(c => c.UserId == userId)
                 .Include(c => c.MenuPrice)
                     .ThenInclude(mp => mp.MenuItem)
                 .Include(c => c.MenuPrice)
                     .ThenInclude(mp => mp.Size)
+                .AsQueryable();
+
+            if (SelectedCartIds?.Any() == true)
+            {
+                cartsQuery = cartsQuery.Where(c => SelectedCartIds.Contains(c.CartId));
+            }
+
+            CartItems = await cartsQuery
                 .Select(c => new CartItemViewModel
                 {
                     CartId = c.CartId,
@@ -262,7 +283,7 @@ namespace PizzafyWeb.Pages
 
             if (!CartItems.Any())
             {
-                ModelState.AddModelError("", "Your cart is empty.");
+                ModelState.AddModelError("", "Your selected cart is empty.");
                 return Page();
             }
 
@@ -316,7 +337,7 @@ namespace PizzafyWeb.Pages
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
 
-                // Create order items
+                // Create order items from selected carts
                 var orderItems = CartItems.Select(item => new OrderItem
                 {
                     OrderId = order.OrderId,
@@ -329,11 +350,14 @@ namespace PizzafyWeb.Pages
                 _context.OrderItems.AddRange(orderItems);
                 await _context.SaveChangesAsync();
 
-                // Clear cart
-                var cartItems = await _context.Carts
-                    .Where(c => c.UserId == userId)
-                    .ToListAsync();
-                _context.Carts.RemoveRange(cartItems);
+                // Clear only the selected cart rows (or all if none specified)
+                var cartRowsQuery = _context.Carts.Where(c => c.UserId == userId);
+                if (SelectedCartIds?.Any() == true)
+                {
+                    cartRowsQuery = cartRowsQuery.Where(c => SelectedCartIds.Contains(c.CartId));
+                }
+                var cartRows = await cartRowsQuery.ToListAsync();
+                _context.Carts.RemoveRange(cartRows);
                 await _context.SaveChangesAsync();
 
                 // Update user contact info if provided (address managed via Profile only)

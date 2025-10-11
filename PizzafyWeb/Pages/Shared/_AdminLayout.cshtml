@@ -13,6 +13,19 @@
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="admin-body">
+    @inject PizzafyWeb.Data.PizzafyDbContext Db
+    @{
+        var pendingAdminApprovals = 0;
+        try
+        {
+            if (User?.Identity?.IsAuthenticated == true && (User?.IsInRole("Admin") ?? false))
+            {
+                pendingAdminApprovals = Db.Users
+                    .Count(u => u.UserType == PizzafyWeb.Models.UserType.Admin && u.AccountStatus == PizzafyWeb.Models.AccountStatus.Pending);
+            }
+        }
+        catch { pendingAdminApprovals = 0; }
+    }
     <div class="admin-container">
         <!-- Sidebar -->
         <aside class="admin-sidebar">
@@ -94,6 +107,10 @@
                             <a href="/Admin/UserApprovals" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/UserApprovals" ? "active" : "")">
                                 <i class="fas fa-user-check"></i>
                                 <span>User Approvals</span>
+                                @if (pendingAdminApprovals > 0)
+                                {
+                                    <span class="badge rounded-pill bg-danger ms-2">@pendingAdminApprovals</span>
+                                }
                             </a>
                         </li>
                     </ul>

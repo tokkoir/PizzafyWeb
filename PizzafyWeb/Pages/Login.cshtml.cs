@@ -41,12 +41,15 @@ namespace PizzafyWeb.Pages
 
             try
             {
+                var username = (Login.Username ?? string.Empty).Trim();
+                var rawPassword = (Login.Password ?? string.Empty).Trim();
+
                 // Hash the password for comparison (using simple MD5 for demonstration)
-                var hashedPassword = HashPassword(Login.Password);
+                var hashedPassword = HashPassword(rawPassword);
 
                 // Find user in database
                 var user = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Username == Login.Username && u.Password == hashedPassword);
+                    .FirstOrDefaultAsync(u => u.Username == username && u.Password == hashedPassword);
 
                 if (user == null)
                 {
@@ -54,16 +57,26 @@ namespace PizzafyWeb.Pages
                     return Page();
                 }
 
-                if (user.AccountStatus == AccountStatus.Pending)
-                {
-                    TempData["ErrorMessage"] = "Your account is pending approval. Please wait for an administrator to approve your account.";
-                    return Page();
-                }
-
+                // If account is disabled, always block
                 if (user.AccountStatus == AccountStatus.Disabled)
                 {
                     TempData["ErrorMessage"] = "Your account has been disabled. Please contact support.";
                     return Page();
+                }
+
+                // Only admins require approval. If a customer is incorrectly Pending, auto-activate.
+                if (user.AccountStatus == AccountStatus.Pending)
+                {
+                    if (user.UserType == UserType.Admin)
+                    {
+                        TempData["ErrorMessage"] = "Your admin account is pending approval. Please wait for an administrator to approve your account.";
+                        return Page();
+                    }
+                    else if (user.UserType == UserType.Customer)
+                    {
+                        user.AccountStatus = AccountStatus.Active;
+                        await _context.SaveChangesAsync();
+                    }
                 }
 
                 // Create claims for the authenticated user
@@ -90,7 +103,7 @@ namespace PizzafyWeb.Pages
                 // Redirect based on user type
                 if (user.UserType == UserType.Admin)
                 {
-                    return RedirectToPage("/Admin/MenuManagement");
+                    return RedirectToPage("/Admin/Dashboard");
                 }
                 else
                 {

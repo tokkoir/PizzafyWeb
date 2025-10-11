@@ -15,6 +15,7 @@ html {
 html {
   position: relative;
   min-height: 100%;
+  scroll-behavior: smooth; /* Smooth scroll for in-page anchors */
 }
 
 body {
@@ -34,6 +35,9 @@ body {
   --pizzafy-dark: #2C3E50;
   --pizzafy-light: #ECF0F1;
 }
+
+/* Ensure anchored sections are not hidden behind fixed header */
+.anchor-offset { scroll-margin-top: 100px; }
 
 /* Ensure currency symbol renders with proper fallback fonts */
 .product-price,
@@ -335,7 +339,7 @@ body {
   font-size: 1.4rem;
 }
 
-.action-card p, .feature-card p {
+action-card p, .feature-card p {
   color: #6c757d;
   margin-bottom: 2rem;
   line-height: 1.6;
@@ -793,16 +797,12 @@ main > .alert {
     align-items: center;
 }
 
-/* Fixed footer specifically for cart page */
+/* Hide footer on cart page entirely */
 body.cart-page .pizzafy-footer {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1030;
+    display: none !important;
 }
 
-/* Ensure content doesn't hide behind footer on cart page */
+/* Adjust main content spacing on cart page */
 body.cart-page #main-content {
-    padding-bottom: 120px; /* footer height allowance */
+    padding-bottom: 40px;
 }

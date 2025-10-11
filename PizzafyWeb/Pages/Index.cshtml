@@ -194,6 +194,114 @@ else
     </section>
 }
 
+<!-- About Section (visible to all) -->
+<section id="about" class="py-5 anchor-offset" style="background:#fff;">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h2 class="section-title">About Pizzafy</h2>
+                <p class="section-subtitle">Our story, values, and what makes us different</p>
+            </div>
+        </div>
+        <div class="row align-items-center g-4">
+            <div class="col-md-6">
+                <div class="p-4 h-100" style="background:#ffffff;border-radius:16px;box-shadow:0 8px 25px rgba(0,0,0,0.08);border:1px solid rgba(139,21,56,0.1);">
+                    <h4 class="mb-3" style="color:var(--pizzafy-red);font-weight:700;">Made with love since day one</h4>
+                    <p class="mb-3 text-muted">Pizzafy was born from a simple idea: great pizza brings people together. We hand-craft our dough, prepare our sauces from scratch, and use only carefully selected ingredients to deliver flavors that feel like home.</p>
+                    <p class="mb-0 text-muted">Whether you're celebrating milestones or enjoying a casual night in, we're here to make every bite memorable—fast, fresh, and friendly.</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="feature-card" style="padding:1.5rem;">
+                            <div class="feature-icon" style="width:70px;height:70px;margin-bottom:1rem;">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <h5 class="mb-1" style="color:var(--pizzafy-red);font-weight:700;">Oven Fresh</h5>
+                            <small class="text-muted">Baked to perfection</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="feature-card" style="padding:1.5rem;">
+                            <div class="feature-icon" style="width:70px;height:70px;margin-bottom:1rem;">
+                                <i class="fas fa-leaf"></i>
+                            </div>
+                            <h5 class="mb-1" style="color:var(--pizzafy-red);font-weight:700;">Fresh Picks</h5>
+                            <small class="text-muted">Locally sourced</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="feature-card" style="padding:1.5rem;">
+                            <div class="feature-icon" style="width:70px;height:70px;margin-bottom:1rem;">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <h5 class="mb-1" style="color:var(--pizzafy-red);font-weight:700;">Community</h5>
+                            <small class="text-muted">Made for people</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="feature-card" style="padding:1.5rem;">
+                            <div class="feature-icon" style="width:70px;height:70px;margin-bottom:1rem;">
+                                <i class="fas fa-hand-holding-heart"></i>
+                            </div>
+                            <h5 class="mb-1" style="color:var(--pizzafy-red);font-weight:700;">Care</h5>
+                            <small class="text-muted">Service-first team</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section (visible to all) -->
+<section id="contact" class="py-5 anchor-offset" style="background:linear-gradient(135deg, var(--pizzafy-cream) 0%, #fff 100%);">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h2 class="section-title">Contact Us</h2>
+                <p class="section-subtitle">We'd love to hear from you</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="p-4 h-100" style="background:#ffffff;border-radius:16px;box-shadow:0 8px 25px rgba(0,0,0,0.08);border:1px solid rgba(139,21,56,0.1);">
+                    <h5 class="mb-3" style="color:var(--pizzafy-red);font-weight:700;">Get in touch</h5>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2"><i class="fas fa-location-dot me-2 text-danger"></i><span class="text-muted">123 Pizza Street, Flavor Town</span></li>
+                        <li class="mb-2"><i class="fas fa-phone me-2 text-danger"></i><a href="tel:+639123456789" class="text-decoration-none">+63 912 345 6789</a></li>
+                        <li class="mb-2"><i class="fas fa-envelope me-2 text-danger"></i><a href="mailto:support@pizzafy.com" class="text-decoration-none">support@pizzafy.com</a></li>
+                        <li><i class="fas fa-clock me-2 text-danger"></i><span class="text-muted">Daily: 10:00 AM - 10:00 PM</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-4 h-100 cta-section" style="border-radius:16px;">
+                    <h5 class="mb-3" style="font-weight:700;">Questions or feedback?</h5>
+                    <p class="text-muted">Send us a message and our team will get back to you shortly.</p>
+                    <form onsubmit="event.preventDefault(); this.reset(); alert('Thanks! We\'ll get back to you soon.');">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" placeholder="Your Name" required />
+                            </div>
+                            <div class="col-md-6">
+                                <input type="email" class="form-control" placeholder="Email Address" required />
+                            </div>
+                            <div class="col-12">
+                                <textarea class="form-control" rows="4" placeholder="Your Message" required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-cta btn-primary">Send Message</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 @functions {
     private string GetProductDescription(string itemName)
     {
