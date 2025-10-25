@@ -416,48 +416,110 @@
             if (totalBtn) totalBtn.innerHTML = `&#8369;${total.toFixed(2)}`;
         }
 
-        // Form validation - require GCash only when selected
-        document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+        // --- AJAX form submit with modal flow ---
+        document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
             const phoneInput = document.querySelector('input[name="PhoneNumber"]');
             const addressInput = document.querySelector('input[name="DeliveryAddress"]');
             const selectedPayment = document.querySelector('.payment-radio:checked');
             const gcashNumberInput = document.querySelector('input[name="GCashNumber"]');
             const gcashSection = document.getElementById('gcashSection');
-            
+            const submitBtn = document.getElementById('placeOrderBtn');
+
+            // Client-side validations (same as before)
             if (!phoneInput.value.trim()) {
-                e.preventDefault();
                 phoneInput.focus();
                 alert('Please enter your phone number.');
                 return false;
             }
-            
+
             if (!addressInput.value.trim()) {
-                e.preventDefault();
                 alert('Your profile does not have a delivery address. Please update it on your Profile page.');
                 window.location.href = '/Profile';
                 return false;
             }
 
             if (!selectedPayment) {
-                e.preventDefault();
                 alert('Please select a payment method.');
                 return false;
             }
 
-            // Only validate GCash number if GCash is selected AND visible
             if (selectedPayment && selectedPayment.value === '2' && gcashSection.style.display !== 'none') {
                 if (!gcashNumberInput.value.trim()) {
-                    e.preventDefault();
                     gcashNumberInput.focus();
                     alert('Please enter your GCash number.');
                     return false;
                 }
             }
 
-            // Disable submit button to prevent double submission
-            const submitBtn = document.getElementById('placeOrderBtn');
+            // Disable submit button and show processing state
             submitBtn.disabled = true;
+            const originalBtnHtml = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Order...';
+
+            try {
+                const form = document.getElementById('checkoutForm');
+                const formData = new FormData(form);
+
+                const response = await fetch(window.location.pathname + window.location.search, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show modal with success message
+                    const msg = data.message || 'Your order has been placed.';
+                    const orderId = data.orderId;
+
+                    const modalMessageEl = document.getElementById('orderSuccessMessage');
+                    modalMessageEl.innerHTML = `
+                        <i class="fas fa-circle-check fa-3x text-success mb-3"></i>
+                        <h5 class="mb-2">Order Placed!</h5>
+                        <p class="mb-1">Thanks for choosing us for delivering your foods.</p>
+                        <p class="mb-0">You can check your order status in the <a href="/Orders">My Orders</a> section.</p>
+                    `;
+
+                    const orderModalEl = document.getElementById('orderSuccessModal');
+                    let orderModal = null;
+                    if (orderModalEl) {
+                        orderModal = (window.bootstrap && window.bootstrap.Modal) ? new bootstrap.Modal(orderModalEl) : null;
+                        if (orderModal) orderModal.show();
+                        else alert(msg);
+                    } else {
+                        alert(msg);
+                    }
+
+                    // OK button handler - redirect to confirmation
+                    document.getElementById('orderSuccessOkBtn').onclick = function() {
+                        window.location.href = '/OrderConfirmation?orderId=' + orderId;
+                    };
+                } else {
+                    // Show errors (prefer validation errors object)
+                    let errMsg = data.message || 'Unable to place order.';
+                    if (data.errors) {
+                        const errors = data.errors;
+                        const parts = [];
+                        for (const key in errors) {
+                            if (Array.isArray(errors[key])) parts.push(errors[key].join('\n'));
+                        }
+                        if (parts.length) errMsg = parts.join('\n');
+                    }
+                    alert(errMsg);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
+            } catch (err) {
+                console.error('Order submission error', err);
+                alert('An unexpected error occurred while placing your order. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+            }
+
+            return false;
         });
 
         // Initialize delivery fee calculation if address is pre-filled
@@ -470,6 +532,29 @@
             }
         });
     </script>
+
+    <!-- Order success modal -->
+    <div class="modal fade" id="orderSuccessModal" tabindex="-1" aria-labelledby="orderSuccessLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderSuccessLabel">Order Placed</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="orderSuccessMessage">
+                        <i class="fas fa-circle-check fa-3x text-success mb-3"></i>
+                        <h5 class="mb-2">Order Placed!</h5>
+                        <p class="mb-1">Thanks for choosing us for delivering your foods.</p>
+                        <p class="mb-0">You can check your order status in the <a href="/Orders">My Orders</a> section.</p>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-primary" id="orderSuccessOkBtn">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @section Styles {

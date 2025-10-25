@@ -216,9 +216,12 @@ namespace PizzafyWeb.Pages
 
         public async Task<IActionResult> OnPostAsync()
         {
+            var isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
             {
+                if (isAjax) return new JsonResult(new { success = false, message = "You must be logged in to place an order." });
                 ModelState.AddModelError("", "You must be logged in to place an order.");
                 return Page();
             }
@@ -227,6 +230,7 @@ namespace PizzafyWeb.Pages
             var user = await _context.Users.FindAsync(userId);
             if (user == null)
             {
+                if (isAjax) return new JsonResult(new { success = false, message = "User not found." });
                 ModelState.AddModelError("", "User not found.");
                 return Page();
             }
@@ -283,6 +287,7 @@ namespace PizzafyWeb.Pages
 
             if (!CartItems.Any())
             {
+                if (isAjax) return new JsonResult(new { success = false, message = "Your selected cart is empty." });
                 ModelState.AddModelError("", "Your selected cart is empty.");
                 return Page();
             }
@@ -294,6 +299,13 @@ namespace PizzafyWeb.Pages
             if (!ModelState.IsValid)
             {
                 PaymentMethods = await _context.Payments.OrderBy(p => p.PaymentId).ToListAsync();
+                if (isAjax)
+                {
+                    // Collect validation errors
+                    var errors = ModelState.Where(ms => ms.Value.Errors.Any())
+                        .ToDictionary(k => k.Key, v => v.Value.Errors.Select(e => e.ErrorMessage).ToArray());
+                    return new JsonResult(new { success = false, message = "Validation failed.", errors });
+                }
                 return Page();
             }
 
@@ -305,6 +317,7 @@ namespace PizzafyWeb.Pages
                 var payment = await _context.Payments.FindAsync(SelectedPaymentId);
                 if (payment == null)
                 {
+                    if (isAjax) return new JsonResult(new { success = false, message = "Invalid payment method." });
                     ModelState.AddModelError("", "Invalid payment method.");
                     PaymentMethods = await _context.Payments.OrderBy(p => p.PaymentId).ToListAsync();
                     return Page();
@@ -316,6 +329,7 @@ namespace PizzafyWeb.Pages
                 
                 if (pendingStatus == null)
                 {
+                    if (isAjax) return new JsonResult(new { success = false, message = "System error: Unable to process order. Please try again." });
                     ModelState.AddModelError("", "System error: Unable to process order. Please try again.");
                     PaymentMethods = await _context.Payments.OrderBy(p => p.PaymentId).ToListAsync();
                     return Page();
@@ -368,11 +382,19 @@ namespace PizzafyWeb.Pages
 
                 TempData["SuccessMessage"] = $"Order #{order.OrderId} has been placed successfully!";
                 TempData["OrderId"] = order.OrderId;
-                
-                return RedirectToPage("/OrderConfirmation", new { orderId = order.OrderId });
+
+                if (isAjax)
+                {
+                    return new JsonResult(new { success = true, orderId = order.OrderId, message = TempData["SuccessMessage"] });
+                }
+                else
+                {
+                    return RedirectToPage("/OrderConfirmation", new { orderId = order.OrderId });
+                }
             }
             catch (Exception ex)
             {
+                if (isAjax) return new JsonResult(new { success = false, message = $"An error occurred while processing your order: {ex.Message}" });
                 ModelState.AddModelError("", $"An error occurred while processing your order: {ex.Message}");
                 PaymentMethods = await _context.Payments.OrderBy(p => p.PaymentId).ToListAsync();
                 return Page();

@@ -123,6 +123,53 @@
             background: #fff;
         }
 
+        /* When input has a toggle icon, add right padding to avoid overlap */
+        .input-container .form-input.has-toggle {
+            padding-right: 35px;
+        }
+
+        /* Inputs that do NOT have a left icon (like password fields when using only toggle) */
+        .form-input.no-left-icon {
+            padding-left: 12px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            color: #999;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 2;
+            padding: 8px;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-password:hover {
+            color: #666;
+        }
+
+        /* Hide native browser password reveal/clear icons (Edge/IE and WebKit browsers) */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none !important;
+        }
+
+        /* Chrome / Safari (WebKit) native decorations */
+        input[type="password"]::-webkit-textfield-decoration-container,
+        input[type="password"]::-webkit-credentials-auto-fill-button,
+        input[type="password"]::-webkit-textfield-decoration-button {
+            display: none !important;
+        }
+
+        /* Firefox - hide the built-in reveal button if present */
+        input[type="password"]::-moz-reveal {
+            display: none !important;
+        }
+
         .form-input:focus {
             outline: none;
             border-color: #d2691e;
@@ -277,6 +324,11 @@
             .form-input {
                 padding: 12px 15px 12px 35px;
                 font-size: 16px;
+            }
+
+            .toggle-password {
+                right: 8px;
+                padding: 8px;
             }
 
             .input-icon {
@@ -642,8 +694,8 @@
         <div class="form-group full-width">
             <p>Password *</p>
             <div class="input-container">
-                <input asp-for="Register.Password" class="form-input" placeholder="Password" type="password" required />
-                <i class="fas fa-lock input-icon"></i>
+                <input asp-for="Register.Password" class="form-input has-toggle no-left-icon" placeholder="Password" type="password" required />
+                <span class="toggle-password" title="Show/Hide password"><i class="fas fa-eye"></i></span>
             </div>
             <span asp-validation-for="Register.Password" class="error-message"></span>
         </div>
@@ -652,8 +704,8 @@
         <div class="form-group full-width">
             <p>Confirm Password *</p>
             <div class="input-container">
-                <input asp-for="Register.ConfirmPassword" class="form-input" placeholder="Confirm Password" type="password" required />
-                <i class="fas fa-lock input-icon"></i>
+                <input asp-for="Register.ConfirmPassword" class="form-input has-toggle no-left-icon" placeholder="Confirm Password" type="password" required />
+                <span class="toggle-password" title="Show/Hide password"><i class="fas fa-eye"></i></span>
             </div>
             <span asp-validation-for="Register.ConfirmPassword" class="error-message"></span>
         </div>
@@ -673,7 +725,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
     
     <script>
-        // Additional client-side validation and error handling
         $(document).ready(function() {
             // Custom validation for password confirmation
             $('input[name="Register.ConfirmPassword"]').on('blur', function() {
@@ -712,6 +763,41 @@
                     $(this).addClass('is-invalid');
                 } else if (phoneValue) {
                     $(this).removeClass('is-invalid');
+                }
+            });
+
+            // Show/hide toggle logic for password fields
+            function updateToggleVisibility($input) {
+                var $container = $input.closest('.input-container');
+                if ($input.val() && $input.val().length > 0) {
+                    $container.addClass('has-value');
+                } else {
+                    $container.removeClass('has-value');
+                }
+            }
+
+            // Initialize toggle visibility on load
+            $('.input-container .form-input.has-toggle').each(function() {
+                updateToggleVisibility($(this));
+            });
+
+            // Update on input and focus/blur
+            $('.input-container .form-input.has-toggle').on('input blur focus', function() {
+                updateToggleVisibility($(this));
+            });
+
+            // Simplified password toggle functionality
+            $('.toggle-password').on('click', function(e) {
+                e.preventDefault();
+                var $icon = $(this).find('i');
+                var $input = $(this).siblings('.form-input');
+                
+                if ($input.attr('type') === 'password') {
+                    $input.attr('type', 'text');
+                    $icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    $input.attr('type', 'password');
+                    $icon.removeClass('fa-eye-slash').addClass('fa-eye');
                 }
             });
 
