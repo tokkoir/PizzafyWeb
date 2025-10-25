@@ -572,93 +572,96 @@
             </div>
         }
 
-        <form method="post">
-            <!-- First Name and Last Name row -->
-            <div class="form-row">
-                <div class="form-group">
-                    <p>First Name *</p>
-                    <div class="input-container">
-                        <input asp-for="Register.FirstName" class="form-input" placeholder="Firstname" required />
-                        <i class="fas fa-user input-icon"></i>
-                    </div>
-                    <span asp-validation-for="Register.FirstName" class="error-message"></span>
-                </div>
-                <div class="form-group">
-                    <p>Last Name *</p>
-                    <div class="input-container">
-                        <input asp-for="Register.LastName" class="form-input" placeholder="Lastname" required />
-                        <i class="fas fa-user input-icon"></i>
-                    </div>
-                    <span asp-validation-for="Register.LastName" class="error-message"></span>
-                </div>
-            </div>
-
-            <!-- Username -->
-            <div class="form-group full-width">
-                <p>Username *</p>
+    <form method="post">
+        <!-- First Name and Last Name row -->
+        <div class="form-row">
+            <div class="form-group">
+                <p>First Name *</p>
                 <div class="input-container">
-                    <input asp-for="Register.Username" class="form-input" placeholder="Username" required />
-                    <i class="fas fa-user-circle input-icon"></i>
+                    <input asp-for="Register.FirstName" class="form-input" placeholder="Firstname" required />
+                    <i class="fas fa-user input-icon"></i>
                 </div>
-                <span asp-validation-for="Register.Username" class="error-message"></span>
+                <span asp-validation-for="Register.FirstName" class="error-message"></span>
             </div>
-
-            <!-- Address -->
-            <div class="form-group full-width">
-                <p>Address *</p>
+            <div class="form-group">
+                <p>Last Name *</p>
                 <div class="input-container">
-                    <input asp-for="Register.Address" class="form-input" placeholder="Address" required />
-                    <i class="fas fa-home input-icon"></i>
+                    <input asp-for="Register.LastName" class="form-input" placeholder="Lastname" required />
+                    <i class="fas fa-user input-icon"></i>
                 </div>
-                <span asp-validation-for="Register.Address" class="error-message"></span>
+                <span asp-validation-for="Register.LastName" class="error-message"></span>
             </div>
+        </div>
 
-            <!-- Phone Number -->
-            <div class="form-group full-width">
-                <p>Phone Number *</p>
-                <div class="input-container">
-                    <input asp-for="Register.PhoneNumber" class="form-input" placeholder="Phone Number" required />
-                    <i class="fas fa-phone input-icon"></i>
-                </div>
-                <span asp-validation-for="Register.PhoneNumber" class="error-message"></span>
+
+        <!-- Address -->
+        <div class="form-group full-width">
+            <p>Address *</p>
+            <div class="input-container">
+                <input asp-for="Register.Address" class="form-input" placeholder="Address" required />
+                <i class="fas fa-home input-icon"></i>
             </div>
+            <span asp-validation-for="Register.Address" class="error-message"></span>
+        </div>
 
-            <!-- Password -->
-            <div class="form-group full-width">
-                <p>Password *</p>
-                <div class="input-container">
-                    <input asp-for="Register.Password" class="form-input" placeholder="Password" type="password" required />
-                    <i class="fas fa-lock input-icon"></i>
-                </div>
-                <span asp-validation-for="Register.Password" class="error-message"></span>
+        <!-- Phone Number -->
+        <div class="form-group full-width">
+            <p>Phone Number *</p>
+            <div class="input-container">
+                <input asp-for="Register.PhoneNumber" class="form-input" placeholder="Phone Number" required />
+                <i class="fas fa-phone input-icon"></i>
             </div>
+            <span asp-validation-for="Register.PhoneNumber" class="error-message"></span>
+        </div>
 
-            <!-- Confirm Password -->
-            <div class="form-group full-width">
-                <p>Confirm Password *</p>
-                <div class="input-container">
-                    <input asp-for="Register.ConfirmPassword" class="form-input" placeholder="Confirm Password" type="password" required />
-                    <i class="fas fa-lock input-icon"></i>
-                </div>
-                <span asp-validation-for="Register.ConfirmPassword" class="error-message"></span>
+        <!-- Requested Role -->
+        <div class="form-group full-width">
+            <p>Registering As *</p>
+            <div class="input-container">
+                <select asp-for="Register.RequestedRole"
+                        class="form-input"
+                        asp-items="Html.GetEnumSelectList<PizzafyWeb.Models.UserType>()"
+                        required>
+                </select>
+                <i class="fas fa-user-shield input-icon"></i>
             </div>
+            <span asp-validation-for="Register.RequestedRole" class="error-message"></span>
+        </div>
 
-            <!-- Requested Role -->
-            <div class="form-group full-width">
-                <p>Registering As *</p>
-                <div class="input-container">
-                    <select asp-for="Register.RequestedRole"
-                            class="form-input"
-                            asp-items="Html.GetEnumSelectList<PizzafyWeb.Models.UserType>()"
-                            required>
-                    </select>
-                    <i class="fas fa-user-shield input-icon"></i>
-                </div>
-                <span asp-validation-for="Register.RequestedRole" class="error-message"></span>
+        <!-- Username -->
+        <div class="form-group full-width">
+            <p>Username *</p>
+            <div class="input-container">
+                <input asp-for="Register.Username" class="form-input" placeholder="Username" required />
+                <i class="fas fa-user-circle input-icon"></i>
             </div>
+            <span asp-validation-for="Register.Username" class="error-message"></span>
+        </div>
 
-            <button type="submit" class="create-button">REGISTER</button>
-        </form>
+        <!-- Password -->
+        <div class="form-group full-width">
+            <p>Password *</p>
+            <div class="input-container">
+                <input asp-for="Register.Password" class="form-input" placeholder="Password" type="password" required />
+                <i class="fas fa-lock input-icon"></i>
+            </div>
+            <span asp-validation-for="Register.Password" class="error-message"></span>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group full-width">
+            <p>Confirm Password *</p>
+            <div class="input-container">
+                <input asp-for="Register.ConfirmPassword" class="form-input" placeholder="Confirm Password" type="password" required />
+                <i class="fas fa-lock input-icon"></i>
+            </div>
+            <span asp-validation-for="Register.ConfirmPassword" class="error-message"></span>
+        </div>
+
+
+
+        <button type="submit" class="create-button">REGISTER</button>
+    </form>
 
         <div class="login-link">
             Already have an account? <a href="/Login">Login now</a>
