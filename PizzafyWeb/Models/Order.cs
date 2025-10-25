@@ -57,4 +57,3 @@ namespace PizzafyWeb.Models
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
-}

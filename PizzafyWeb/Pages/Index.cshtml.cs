@@ -15,6 +15,7 @@ namespace PizzafyWeb.Pages
         public decimal Price { get; set; } // This will be the starting price (minimum)
         public List<SizePrice> Sizes { get; set; } = new();
         public string CategoryName { get; set; } = "";
+        public bool IsAvailable { get; set; } = true;
     }
 
     public class SizePrice
@@ -124,10 +125,20 @@ namespace PizzafyWeb.Pages
                             image = g.Select(x => x.Image).FirstOrDefault(img => !string.IsNullOrWhiteSpace(img)) ?? rep.Image,
                             categoryName = rep.Category.CategoryName,
                             price = allSizes.Min(s => s.price),
-                            sizes = allSizes
+                            sizes = allSizes,
+                            isAvailable = g.Any(x => x.IsAvailable)
                         };
                     })
                     .ToList();
+
+                // Sort: available first, then not available (only for 'all' category)
+                if (category == "all")
+                {
+                    uniqueProducts = uniqueProducts
+                        .OrderByDescending(p => p.isAvailable)
+                        .ThenBy(p => p.itemName)
+                        .ToList();
+                }
 
                 // PAGINATION based on UNIQUE products only
                 const int pageSize = 4;
@@ -205,7 +216,7 @@ namespace PizzafyWeb.Pages
                 var items = await query.ToListAsync();
 
                 // Map to view models - unify sizes across all menu items with the same ItemName
-                PizzaProducts = items
+                var products = items
                     .GroupBy(m => m.ItemName)
                     .Select(g =>
                     {
@@ -231,10 +242,22 @@ namespace PizzafyWeb.Pages
                             Image = g.Select(x => x.Image).FirstOrDefault(img => !string.IsNullOrWhiteSpace(img)) ?? rep.Image,
                             Price = allSizes.Min(s => s.Price),
                             CategoryName = rep.Category.CategoryName,
-                            Sizes = allSizes
+                            Sizes = allSizes,
+                            IsAvailable = g.Any(x => x.IsAvailable)
                         };
                     })
                     .ToList();
+
+                // Sort: available first, then not available (only for 'all' category)
+                if (category == "all")
+                {
+                    products = products
+                        .OrderByDescending(p => p.IsAvailable)
+                        .ThenBy(p => p.ItemName)
+                        .ToList();
+                }
+
+                PizzaProducts = products;
 
                 // No pagination for "all" category on initial load
                 ShowPagination = false;

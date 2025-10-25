@@ -37,6 +37,9 @@ namespace PizzafyWeb.Models
         [MaxLength(255)]
         public string? Image { get; set; } // Nullable, only set if uploaded
 
+        [Column("is_available")]
+        public bool IsAvailable { get; set; } = true;
+
         public ICollection<MenuPrice> MenuPrices { get; set; } = new List<MenuPrice>();
     }
 }

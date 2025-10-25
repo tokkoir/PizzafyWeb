@@ -96,7 +96,8 @@
                                  .Distinct()
                                  .ToList(),
                         Prices = g.SelectMany(x => x.MenuPrices.Select(mp => mp.UnitPrice))
-                                  .ToList()
+                                  .ToList(),
+                        IsAvailable = g.Any(x => x.IsAvailable) // if any variant available, treat as available
                     })
                     .OrderBy(x => x.CategoryName)
                     .ThenBy(x => x.ItemName)
@@ -154,7 +155,14 @@
                     </div>
 
                     <div class="table-cell status-cell">
-                        <span class="status-badge enabled">Active</span>
+                        @if (item.IsAvailable)
+                        {
+                            <span class="status-badge enabled">Active</span>
+                        }
+                        else
+                        {
+                            <span class="status-badge disabled">Disabled</span>
+                        }
                     </div>
 
                     <div class="table-cell actions-cell">
@@ -162,12 +170,10 @@
                             <i class="fas fa-edit"></i>
                             Edit
                         </a>
-                        <form method="post" style="display: inline;">
-                            <button type="submit" asp-page-handler="Delete" asp-route-id="@item.RepresentativeId"
-                                    class="btn-action btn-disable"
-                                    onclick="return confirm('Are you sure you want to delete this product?')">
-                                <i class="fas fa-trash"></i>
-                                Delete
+                        <form method="post" style="display: inline;" class="toggle-availability-form" data-name="@item.ItemName.ToLower()" data-id="@item.RepresentativeId">
+                            <button type="button" data-id="@item.RepresentativeId" class="btn-action toggle-availability-btn @(item.IsAvailable ? "btn-disable" : "btn-enable")" data-available="@(item.IsAvailable ? "1" : "0")">
+                                <i class="fas @(item.IsAvailable ? "fa-ban" : "fa-check")"></i>
+                                @(item.IsAvailable ? "Disable" : "Enable")
                             </button>
                         </form>
                     </div>
@@ -241,7 +247,69 @@
                     searchInput.focus();
                 });
             }
+
+            // Attach toggle availability handlers
+            document.querySelectorAll('.toggle-availability-btn').forEach(btn => {
+                btn.addEventListener('click', async function (e) {
+                    const id = this.dataset.id;
+                    const form = this.closest('.toggle-availability-form');
+                    const name = form.dataset.name;
+                    const currentlyAvailable = this.dataset.available === '1';
+                    const confirmMsg = currentlyAvailable ? 'Are you sure you want to disable this product?' : 'Are you sure you want to enable this product?';
+                    if (!confirm(confirmMsg)) return;
+
+                    try {
+                        const res = await fetch(`?handler=ToggleAvailability&id=${encodeURIComponent(id)}`, { method: 'POST', headers: { 'RequestVerificationToken': getAntiForgeryToken() } });
+                        if (!res.ok) throw new Error('Request failed');
+                        // Toggle button state and status badge in table
+                        const newAvailable = !currentlyAvailable;
+                        // Update state value on the button (1 = available/active, 0 = disabled)
+                        this.dataset.available = newAvailable ? '1' : '0';
+                        // Button class indicates the action (when active -> show Disable action, when disabled -> show Enable action)
+                        if (newAvailable) {
+                            this.classList.remove('btn-enable');
+                            this.classList.add('btn-disable');
+                        } else {
+                            this.classList.remove('btn-disable');
+                            this.classList.add('btn-enable');
+                        }
+                        // Update icon + label: when active show 'Disable', when disabled show 'Enable'
+                        this.innerHTML = `<i class="fas ${newAvailable ? 'fa-ban' : 'fa-check'}"></i> ${newAvailable ? 'Disable' : 'Enable'}`;
+
+                        const row = this.closest('.table-row');
+                        const statusBadge = row.querySelector('.status-badge');
+                        if (statusBadge) {
+                            statusBadge.classList.toggle('enabled', newAvailable);
+                            statusBadge.classList.toggle('disabled', !newAvailable);
+                            statusBadge.textContent = newAvailable ? 'Active' : 'Disabled';
+                        }
+
+                        // Update product cards on product listing pages by matching data-name
+                        document.querySelectorAll(`.product-card[data-name='${name}']`).forEach(card => {
+                            const overlay = card.querySelector('.not-available-overlay');
+                            const controls = card.querySelectorAll('.qty-select, .size-select, .add-to-cart-btn');
+                            if (newAvailable) {
+                                card.classList.remove('disabled');
+                                if (overlay) overlay.style.display = 'none';
+                                controls.forEach(c => c.disabled = false);
+                            } else {
+                                card.classList.add('disabled');
+                                if (overlay) overlay.style.display = 'flex';
+                                controls.forEach(c => c.disabled = true);
+                            }
+                        });
+
+                    } catch (err) {
+                        alert('Failed to update availability.');
+                    }
+                });
+            });
         });
+
+        function getAntiForgeryToken() {
+            const tokenEl = document.querySelector('input[name="__RequestVerificationToken"]');
+            return tokenEl ? tokenEl.value : '';
+        }
 
         function filterProductsLocally() {
             let hasVisibleRows = false;

@@ -103,7 +103,7 @@ namespace PizzafyWeb.Pages
             var priceChangedItems = new List<string>();
             var removedItems = new List<string>();
             
-            foreach (var item in Items.Where(i => i.PriceChanged))
+            foreach (var item in Items.Where(i => i.PriceChanged).ToList())
             {
                 var cartItem = await _context.Carts.FindAsync(item.CartId);
                 if (cartItem != null)
@@ -205,13 +205,17 @@ namespace PizzafyWeb.Pages
 
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            // Validate the price/size exists
+            // Validate the price/size exists and the linked MenuItem is available
             var price = await _context.MenuPrices
                 .Include(p => p.MenuItem)
                 .FirstOrDefaultAsync(p => p.PriceId == dto.PriceId);
             if (price == null)
             {
                 return new JsonResult(new { ok = false, message = "Invalid price/size" }) { StatusCode = 400 };
+            }
+            if (!price.MenuItem.IsAvailable)
+            {
+                return new JsonResult(new { ok = false, message = "This product is not available" }) { StatusCode = 400 };
             }
 
             // Upsert: if same price_id exists, increase qty
@@ -254,6 +258,10 @@ namespace PizzafyWeb.Pages
 
             // Ensure the new size belongs to the same product name
             if (!string.Equals(newPrice.MenuItem.ItemName, row.MenuPrice.MenuItem.ItemName, StringComparison.OrdinalIgnoreCase))
+                return RedirectToPage();
+
+            // Prevent selecting a size for an unavailable item
+            if (!newPrice.MenuItem.IsAvailable)
                 return RedirectToPage();
 
             row.PriceId = newPrice.PriceId;
