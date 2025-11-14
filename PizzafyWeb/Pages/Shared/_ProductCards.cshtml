@@ -1,4 +1,18 @@
+@using System.Text.RegularExpressions
 @model IEnumerable<PizzafyWeb.Pages.PizzaProductViewModel>
+
+@functions {
+    public static string FormatSizeLabel(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return name ?? string.Empty;
+        var m = Regex.Match(name, "\\((\\d+)\\s*oz\\)", RegexOptions.IgnoreCase);
+        if (m.Success)
+        {
+            return $"{m.Groups[1].Value}oz"; // e.g., Small (8 oz) -> 8oz
+        }
+        return name!;
+    }
+}
 
 @if (Model != null && Model.Any())
 {
@@ -58,7 +72,16 @@
 
                                 @foreach (var size in product.Sizes)
                                 {
-                                    <option value="@size.SizeId" data-price="@size.Price" data-price-id="@size.PriceId">@size.SizeName</option>
+                                    var label = FormatSizeLabel(size.SizeName);
+                                    var text = size.IsAvailable ? label : (label + " - Unavailable");
+                                    if (size.IsAvailable)
+                                    {
+                                        <option value="@size.SizeId" data-price="@size.Price" data-price-id="@size.PriceId">@text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@size.SizeId" data-price="@size.Price" data-price-id="@size.PriceId" disabled>@text</option>
+                                    }
                                 }
                             </select>
                         </div>
@@ -78,8 +101,13 @@
         if (sel.disabled) return;
         const priceEl = sel.closest('.product-card').querySelector('.product-price');
         const apply = () => {
+            // select first available if current is disabled
+            if (sel.options[sel.selectedIndex]?.disabled) {
+                const idx = Array.from(sel.options).findIndex(o => !o.disabled);
+                if (idx >= 0) sel.selectedIndex = idx;
+            }
             const opt = sel.options[sel.selectedIndex];
-            const p = parseFloat(opt.dataset.price);
+            const p = parseFloat(opt?.dataset.price);
             if (!isNaN(p)) priceEl.textContent = `\u20B1${p.toFixed(2)}`;
         };
         sel.addEventListener('change', apply);

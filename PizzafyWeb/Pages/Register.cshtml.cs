@@ -11,10 +11,12 @@ namespace PizzafyWeb.Pages
     public class RegisterModel : PageModel
     {
         private readonly PizzafyDbContext _context;
+        private readonly IConfiguration _config;
 
-        public RegisterModel(PizzafyDbContext context)
+        public RegisterModel(PizzafyDbContext context, IConfiguration config)
         {
             _context = context;
+            _config = config;
         }
 
         [BindProperty]
@@ -56,7 +58,6 @@ namespace PizzafyWeb.Pages
 
                 var requestedRole = Register.RequestedRole;
                 var userType = requestedRole == UserType.Admin ? UserType.Admin : UserType.Customer;
-                var status = requestedRole == UserType.Admin ? AccountStatus.Pending : AccountStatus.Active;
 
                 var newUser = new User
                 {
@@ -68,21 +69,13 @@ namespace PizzafyWeb.Pages
                     Address = Register.Address,
                     CreatedAt = DateTime.Now,
                     UserType = userType,
-                    AccountStatus = status
+                    AccountStatus = AccountStatus.Active
                 };
 
                 _context.Users.Add(newUser);
                 await _context.SaveChangesAsync();
 
-                if (requestedRole == UserType.Admin)
-                {
-                    TempData["SuccessMessage"] = "Your admin registration request was submitted and is pending approval by an administrator.";
-                }
-                else
-                {
-                    TempData["SuccessMessage"] = "Account created successfully! Please login with your credentials.";
-                }
-
+                TempData["SuccessMessage"] = "Account created! You can now log in.";
                 return RedirectToPage("/Login");
             }
             catch (Exception)

@@ -22,6 +22,9 @@ namespace PizzafyWeb.Models
         [DataType(DataType.Currency)]
         public decimal UnitPrice { get; set; }
 
+        [Column("is_available")]
+        public bool IsAvailable { get; set; } = true;
+
         // Navigation properties
         [ForeignKey("MenuItemId")]
         public virtual MenuItem MenuItem { get; set; } = null!;

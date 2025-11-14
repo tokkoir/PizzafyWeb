@@ -8,642 +8,537 @@
 <section class="container py-4">
     <div class="d-flex align-items-center mb-4">
         <a href="/Cart" class="btn btn-outline-secondary me-3">
-            <i class="fas fa-arrow-left me-2"></i>
+            <i class="fas fa-arrow-left me-2"></i><span class="d-none d-sm-inline">Back</span>
         </a>
-        <h2 style="color:#8c1007;font-weight:900;letter-spacing:2px;">Checkout</h2>
+        <h2 class="mb-0" style="color:#8c1007;font-weight:900;letter-spacing:2px;">Checkout</h2>
     </div>
-    
-    <form method="post" id="checkoutForm">
-        <div class="row">
-            <div class="col-lg-8">
-                <!-- Customer Information -->
-                <div class="card mb-4">
-                    <div class="card-header" style="background:#8c1007;color:white;">
-                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Contact Information</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="PhoneNumber" class="form-label">Phone Number *</label>
-                                    <input asp-for="PhoneNumber" class="form-control" placeholder="Enter your phone number" />
-                                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-                                    <small class="form-text text-muted">We'll use this number for delivery updates</small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Customer Name</label>
-                                    <input type="text" class="form-control" value="@Model.CustomerFullName" readonly style="background-color:#f8f9fa;" />
-                                </div>
+
+    <div class="row g-4">
+        <!-- Left: Checkout Form -->
+        <div class="col-12 col-lg-8">
+            <!-- Contact Information -->
+            <div class="card mb-4">
+                <div class="card-header" style="background:#8c1007;color:white;">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-0">
+                                <label class="form-label">Phone Number *</label>
+                                <input type="text" id="phoneInput" class="form-control" placeholder="09XXXXXXXXX or +639XXXXXXXXX" value="@Model.PhoneNumber" />
+                                <div class="invalid-feedback">Enter a valid PH phone number (09XXXXXXXXX or +639XXXXXXXXX)</div>
                             </div>
                         </div>
-                        
-                        <!-- Delivery Address (Read-only, managed in Profile) -->
-                        <div class="mb-3">
-                            <label asp-for="DeliveryAddress" class="form-label">Delivery Address *</label>
-                            <div class="position-relative">
-                                <input asp-for="DeliveryAddress" 
-                                       class="form-control" 
-                                       id="deliveryAddressInput"
-                                       placeholder="Your saved delivery address" 
-                                       autocomplete="off"
-                                       readonly
-                                       title="Update your address in Profile" />
+                        <div class="col-12 col-md-6">
+                            <div class="mb-0">
+                                <label class="form-label">Customer Name *</label>
+                                <input type="text" id="customerNameInput" class="form-control" value="@Model.CustomerFullName" />
+                                <div class="invalid-feedback">Customer name is required</div>
                             </div>
-                            <span asp-validation-for="DeliveryAddress" class="text-danger"></span>
-                            <small class="form-text text-muted">
-                                <i class="fas fa-map-marker-alt me-1"></i>
-                                Update your address from <a href="/Profile">My Profile</a>. Delivery fee is calculated based on distance from our restaurant.
-                            </small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label asp-for="SpecialInstructions" class="form-label">Special Instructions</label>
-                            <textarea asp-for="SpecialInstructions" class="form-control" rows="2" placeholder="Any special requests or delivery instructions (optional)"></textarea>
-                            <span asp-validation-for="SpecialInstructions" class="text-danger"></span>
                         </div>
                     </div>
                 </div>
-
-                <!-- Payment Method -->
-                <div class="card mb-4">
-                    <div class="card-header" style="background:#8c1007;color:white;">
-                        <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Payment Method</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-2">
-                            <span class="text-danger" asp-validation-for="SelectedPaymentId"></span>
-                        </div>
-                        @if (Model.PaymentMethods?.Any() ?? false)
-                        {
-                            <div class="list-group">
-                                @foreach (var method in Model.PaymentMethods)
-                                {
-                                    var inputId = $"pay_{method.PaymentId}";
-                                    <label class="list-group-item d-flex align-items-center" for="@inputId" style="cursor:pointer;">
-                                        <input class="form-check-input me-2 payment-radio" type="radio" id="@inputId" name="SelectedPaymentId" value="@method.PaymentId" @(method.PaymentId == Model.SelectedPaymentId ? "checked" : null) />
-                                        <span>@method.PaymentName</span>
-                                    </label>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="alert alert-warning mb-0">
-                                No payment methods available.
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <!-- Hidden field for delivery fee -->
-                <input asp-for="CalculatedDeliveryFee" type="hidden" id="deliveryFeeInput" />
             </div>
 
-            <!-- Order Summary -->
-            <div class="col-lg-4">
-                <div class="card sticky-top" style="top:100px;">
-                    <div class="card-header" style="background:#8c1007;color:white;">
-                        <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Order Summary</h5>
-                    </div>
-                    <div class="card-body">
-                        @foreach (var item in Model.CartItems)
-                        {
-                            <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
-                                <div class="me-3">
-                                    @if (!string.IsNullOrWhiteSpace(item.Image))
-                                    {
-                                        <img src="/images/products/@item.Image" alt="@item.ItemName" style="width:50px;height:50px;border-radius:8px;object-fit:cover;" />
-                                    }
-                                    else
-                                    {
-                                        <div style="width:50px;height:50px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;justify-content:center;">
-                                            <i class="fas fa-image text-muted"></i>
-                                        </div>
-                                    }
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1">@item.ItemName</h6>
-                                    <small class="text-muted">@item.SizeName</small>
-                                    <div class="d-flex justify-content-between">
-                                        <span>Qty: @item.Quantity</span>
-                                        <span class="fw-bold">&#8369;@item.Subtotal.ToString("0.00")</span>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Subtotal:</span>
-                            <span id="subtotalAmount">&#8369;@Model.Subtotal.ToString("0.00")</span>
+            <!-- Delivery Address -->
+            <div id="deliverySection" class="card mb-4">
+                <div class="card-header" style="background:#8c1007;color:white;">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Delivery Address</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Saved addresses dropdown -->
+                    <div class="mb-3">
+                        <label class="form-label">Saved Addresses</label>
+                        <div class="d-flex flex-column flex-sm-row gap-2">
+                            <select id="addressSelect" class="form-select flex-grow-1">
+                                <option value="" selected disabled>Select address...</option>
+                            </select>
+                            <button class="btn btn-outline-secondary" id="editAddressBtn" title="Edit selected" disabled>
+                                <i class="fas fa-edit"></i><span class="d-none d-sm-inline ms-2">Edit</span>
+                            </button>
                         </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Delivery Fee:</span>
-                            <span id="deliveryFeeAmount" class="@(Model.DeliveryFee == 0 ? "text-success" : "")">
-                                @if (Model.DeliveryFee == 0)
+                        <small class="text-muted d-block mt-2"><i class="fas fa-info-circle me-1"></i>Fixed delivery fee: &#8369;19.00 within Cebu City</small>
+                    </div>
+
+                    <div class="text-end mb-3 d-flex flex-column flex-sm-row justify-content-sm-end gap-2">
+                        <button class="btn btn-sm btn-outline-primary" id="showNewAddressBtn"><i class="fas fa-plus me-1"></i>Add New Address</button>
+                        <button class="btn btn-sm btn-outline-secondary" id="cancelEditAddressBtn" style="display:none;">Cancel</button>
+                    </div>
+
+                    <!-- Add/Edit Address Form -->
+                    <div id="newAddressForm" class="border rounded p-3" style="display:none;">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-8">
+                                <label class="form-label">Street Address / House No. *</label>
+                                <input type="text" id="addrStreet" class="form-control" />
+                                <div class="invalid-feedback">Street address is required</div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Barangay *</label>
+                                <select id="addrBarangay" class="form-select"></select>
+                                <div class="invalid-feedback">Barangay is required</div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">City</label>
+                                <input type="text" class="form-control" value="Cebu City" disabled />
+                            </div>
+                            <div class="col-12 col-md-8">
+                                <label class="form-label">Landmark (optional)</label>
+                                <input type="text" id="addrLandmark" class="form-control" />
+                            </div>
+                            <div class="col-12 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="addrDefault">
+                                    <label class="form-check-label" for="addrDefault">Set as default address</label>
+                                </div>
+                                <button type="button" class="btn btn-primary" id="saveAddressBtn"><i class="fas fa-save me-1"></i><span id="saveAddressBtnText">Save Address</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Special Instructions -->
+            <div class="card mb-4">
+                <div class="card-header" style="background:#8c1007;color:white;">
+                    <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i>Special Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <label class="form-label">Instructions (optional)</label>
+                    <textarea id="specialInstructions" class="form-control" rows="3" maxlength="250" placeholder="Any special requests or delivery instructions (optional)"></textarea>
+                    <div class="text-end mt-1"><small id="instrCounter" class="text-muted">0/250</small></div>
+                </div>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="card mb-4">
+                <div class="card-header" style="background:#8c1007;color:white;">
+                    <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Payment Method</h5>
+                </div>
+                <div class="card-body">
+                    <!-- COD Option -->
+                    <label class="payment-option-card" for="payCash">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="payCash" value="cash" checked>
+                        <div class="payment-option-content">
+                            <i class="fas fa-wallet payment-icon"></i>
+                            <span class="payment-label" id="cashLabel">COD</span>
+                        </div>
+                    </label>
+
+                    <!-- GCash Option -->
+                    <label class="payment-option-card" for="payGCash">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="payGCash" value="gcash">
+                        <div class="payment-option-content">
+                            <i class="fas fa-mobile-alt payment-icon"></i>
+                            <span class="payment-label">GCASH</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Order Summary -->
+        <div class="col-12 col-lg-4">
+            <div class="card sticky-top" style="top:100px;">
+                <div class="card-header" style="background:#8c1007;color:white;">
+                    <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    @foreach (var item in Model.CartItems)
+                    {
+                        <div class="d-flex align-items-start mb-3 pb-3 border-bottom">
+                            <div class="me-3 flex-shrink-0">
+                                @if (!string.IsNullOrWhiteSpace(item.Image))
                                 {
-                                    <span>FREE</span>
+                                    <img src="/images/products/@item.Image" alt="@item.ItemName" style="width:50px;height:50px;border-radius:8px;object-fit:cover;" />
                                 }
                                 else
                                 {
-                                    <span>&#8369;@Model.DeliveryFee.ToString("0.00")</span>
+                                    <div style="width:50px;height:50px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                                        <i class="fas fa-image text-muted"></i>
+                                    </div>
                                 }
-                            </span>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between">
-                            <strong>Total:</strong>
-                            <strong style="color:#8c1007;font-size:1.2rem;" id="totalAmount">&#8369;@Model.Total.ToString("0.00")</strong>
-                        </div>
-                        
-                        <!-- Delivery Fee Info -->
-                        <div class="mt-3">
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                <span id="deliveryInfo">
-                                    @if (Model.DeliveryFee == 19)
-                                    {
-                                        <span>Standard delivery fee applies</span>
-                                    }
-                                    else
-                                    {
-                                        <span>Fee calculated based on distance</span>
-                                    }
-                                </span>
-                            </small>
-                        </div>
-
-                        <!-- GCash Payment Section (relocated below delivery info) -->
-                        <div class="card mt-3" id="gcashSection" style="display:none;">
-                            <div class="card-body" style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border: 2px solid #2196F3; border-radius: 12px; position: relative;">
-                                <div class="d-flex align-items-center mb-3">
-                                    <i class="fas fa-mobile-alt text-primary me-2" style="font-size: 1.5rem;"></i>
-                                    <h5 class="mb-0 text-primary">GCash Payment</h5>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-12">
-                                        <div class="mb-3" style="position: relative; z-index: 10;">
-                                            <label asp-for="GCashNumber" class="form-label fw-bold">GCash Number</label>
-                                            <input asp-for="GCashNumber" 
-                                                   class="form-control form-control-lg" 
-                                                   placeholder="09XX XXX XXXX" 
-                                                   style="font-size: 1.1rem; position: relative; z-index: 10; background-color: white;" 
-                                                   maxlength="11"
-                                                   pattern="[0-9]{11}"
-                                                   title="Please enter an 11-digit GCash number" />
-                                            <span asp-validation-for="GCashNumber" class="text-danger"></span>
-                                            <small class="text-muted">Enter your 11-digit GCash number</small>
-                                        </div>
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1 min-w-0 me-2">
+                                        <h6 class="mb-0 text-truncate">@item.ItemName</h6>
+                                        <small class="text-muted">@item.SizeName</small>
                                     </div>
-                                    <div class="col-12">
-                                        <div class="mb-3" style="position: relative; z-index: 10;">
-                                            <label class="form-label fw-bold">Amount to Pay</label>
-                                            <div class="input-group input-group-lg">
-                                                <span class="input-group-text bg-success text-white">&#8369;</span>
-                                                <input type="text" class="form-control" id="gcashAmount" readonly value="@Model.Total.ToString("0.00")" style="background-color: #f8f9fa; font-weight: bold; font-size: 1.2rem;" />
-                                            </div>
-                                        </div>
+                                    <div class="flex-shrink-0">
+                                        <a href="/Cart" class="btn btn-sm btn-outline-secondary" title="Edit"><i class="fas fa-edit"></i></a>
                                     </div>
                                 </div>
-                                
-                                <div class="alert alert-info mt-3 mb-0" style="position: relative; z-index: 10;">
-                                    <strong>Instructions:</strong>
-                                    <ol class="mb-0 mt-2">
-                                        <li>Enter your GCash number</li>
-                                        <li>Click "Complete Order" below</li>
-                                        <li>We'll verify your payment</li>
-                                    </ol>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <span class="text-muted">Qty: @item.Quantity</span>
+                                    <span class="fw-bold">&#8369;@item.Subtotal.ToString("0.00")</span>
                                 </div>
                             </div>
                         </div>
+                    }
 
-                        <!-- Order Action Button (moved to bottom of order summary) -->
-                        <div class="mt-4">
-                            <button type="submit" class="btn btn-success btn-lg w-100" id="placeOrderBtn">
-                                <i class=""></i><span id="orderBtnText">Complete Order</span> 
-                            </button>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span id="subtotalAmount">&#8369;@Model.Subtotal.ToString("0.00")</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Delivery Fee:</span>
+                        <span id="deliveryFeeAmount">&#8369;19.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Total:</strong>
+                        <strong id="totalAmount" style="color:#8c1007;font-size:1.2rem;">&#8369;@(Model.Subtotal + 19m).ToString("0.00")</strong>
+                    </div>
+
+                    <div class="mt-3">
+                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i><span id="feeNote">Fixed delivery fee: &#8369;19.00 within Cebu City</span></small>
+                    </div>
+
+                    <!-- GCash Payment Form (completely hidden when COD is selected) -->
+                    <div id="gcashPaymentForm" class="mt-4" style="display:none;">
+                        <div class="gcash-card p-3">
+                            <div class="d-flex align-items-center mb-3 gcash-header">
+                                <i class="fas fa-mobile-alt me-2 gcash-header-icon"></i>
+                                <h6 class="mb-0 gcash-title">GCash Payment</h6>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">GCash Number</label>
+                                <input type="text" id="gcashNumber" class="form-control" placeholder="09XX XXX XXXX" maxlength="11">
+                                <div class="invalid-feedback">Enter a valid 11-digit GCash number</div>
+                                <small class="text-muted">Enter your 11-digit GCash number</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Amount to Pay</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white">&#8369;</span>
+                                    <input type="text" id="gcashAmountDisplay" class="form-control fw-bold" readonly style="background:#f8f9fa;font-size:1.1rem;">
+                                </div>
+                            </div>
+
+                            <div class="gcash-instructions">
+                                <div class="fw-semibold mb-1">Instructions:</div>
+                                <ol class="mb-0 ps-3">
+                                    <li>Enter your GCash number</li>
+                                    <li>Click "Complete Order" below</li>
+                                    <li>We'll verify your payment</li>
+                                </ol>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </form>
-</section>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    
-    <!-- Google Places API -->
-    @if (!string.IsNullOrEmpty(Model.GoogleMapsApiKey))
-    {
-        <script src="https://maps.googleapis.com/maps/api/js?key=@Model.GoogleMapsApiKey&libraries=places&callback=initAutocomplete" async defer></script>
-    }
-    
-    <script>
-        let autocomplete;
-        let isCalculatingFee = false;
-        const subtotalAmount = @Model.Subtotal.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
-
-        // Payment method change handler
-        document.addEventListener('DOMContentLoaded', function() {
-            const paymentRadios = document.querySelectorAll('.payment-radio');
-            const gcashSection = document.getElementById('gcashSection');
-            const gcashAmountInput = document.getElementById('gcashAmount');
-            const orderBtnText = document.getElementById('orderBtnText');
-            
-            // Robustly parse current total from UI
-            function getCurrentTotal() {
-                const totalEl = document.getElementById('totalAmount') || document.getElementById('totalAmountBtn');
-                if (!totalEl) return 0;
-                const raw = (totalEl.textContent || '').replace(/[^0-9.]/g, '');
-                const n = parseFloat(raw);
-                return isNaN(n) ? 0 : n;
-            }
-            // Update GCash amount display
-            function updateGCashAmount() {
-                const total = getCurrentTotal();
-                if (gcashAmountInput) {
-                    gcashAmountInput.value = total.toFixed(2);
-                }
-            }
-            
-            function handlePaymentChange() {
-                const selectedPayment = document.querySelector('.payment-radio:checked');
-                const isGCash = selectedPayment && selectedPayment.value === '2'; // Assuming GCash is ID 2
-                
-                if (isGCash) {
-                    gcashSection.style.display = 'block';
-                    updateGCashAmount();
-                    orderBtnText.textContent = 'Complete Order';
-                } else {
-                    gcashSection.style.display = 'none';
-                    orderBtnText.textContent = 'Complete Order';
-                }
-            }
-            
-            // Attach event listeners
-            paymentRadios.forEach(radio => {
-                radio.addEventListener('change', handlePaymentChange);
-            });
-            
-            // Initial check and sync
-            handlePaymentChange();
-            updateGCashAmount();
-            
-            // Update GCash amount when total changes (delivery fee calculation)
-            const targetIds = ['totalAmount', 'totalAmountBtn'];
-            targetIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                const observer = new MutationObserver(function() {
-                    if (document.querySelector('.payment-radio:checked')?.value === '2') {
-                        updateGCashAmount();
-                    }
-                });
-                observer.observe(el, { childList: true, subtree: true, characterData: true });
-            });
-        });
-
-        // Initialize Google Places Autocomplete (disabled when input is readonly)
-        function initAutocomplete() {
-            const addressInput = document.getElementById('deliveryAddressInput');
-            if (!addressInput || addressInput.hasAttribute('readonly')) return;
-
-            // Focus on Philippines for better suggestions
-            autocomplete = new google.maps.places.Autocomplete(addressInput, {
-                componentRestrictions: { country: 'ph' },
-                fields: ['formatted_address', 'geometry']
-            });
-
-            // Listen for place selection
-            autocomplete.addListener('place_changed', function() {
-                const place = autocomplete.getPlace();
-                if (place.formatted_address) {
-                    addressInput.value = place.formatted_address;
-                    calculateDeliveryFee(place.formatted_address);
-                }
-            });
-        }
-
-        // Fallback initialization if Google Maps API is not available
-        document.addEventListener('DOMContentLoaded', function() {
-            // If Google Maps API is not loaded, set up manual address change listener
-            const addressInput = document.getElementById('deliveryAddressInput');
-            if (addressInput && typeof google === 'undefined' && !addressInput.hasAttribute('readonly')) {
-                let debounceTimer;
-                addressInput.addEventListener('input', function() {
-                    clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(() => {
-                        if (this.value.length > 10) { // Only calculate for substantial addresses
-                            calculateDeliveryFee(this.value);
-                        }
-                    }, 1000); // Wait 1 second after user stops typing
-                });
-            }
-
-            // Auto-resize textareas
-            document.querySelectorAll('textarea').forEach(textarea => {
-                textarea.style.height = 'auto';
-                textarea.style.height = textarea.scrollHeight + 'px';
-                
-                textarea.addEventListener('input', function() {
-                    this.style.height = 'auto';
-                    this.style.height = this.scrollHeight + 'px';
-                });
-            });
-        });
-
-        // Calculate delivery fee via AJAX
-        async function calculateDeliveryFee(address) {
-            if (isCalculatingFee || !address || address.length < 10) return;
-            
-            isCalculatingFee = true;
-            updateDeliveryFeeDisplay('Calculating...', '');
-
-            try {
-                const response = await fetch(`/Checkout?handler=CalculateDeliveryFee&address=${encodeURIComponent(address)}`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    const fee = parseFloat(data.fee);
-                    updateDeliveryFeeDisplay(fee, fee === 0 ? 'FREE delivery!' : `Fee based on distance`);
-                    updateTotalAmount(fee);
-                    
-                    // Update hidden field
-                    document.getElementById('deliveryFeeInput').value = fee;
-                } else {
-                    updateDeliveryFeeDisplay(19, 'Standard delivery fee');
-                    updateTotalAmount(19);
-                    document.getElementById('deliveryFeeInput').value = 19;
-                }
-            } catch (error) {
-                console.error('Error calculating delivery fee:', error);
-                updateDeliveryFeeDisplay(19, 'Standard delivery fee');
-                updateTotalAmount(19);
-                document.getElementById('deliveryFeeInput').value = 19;
-            } finally {
-                isCalculatingFee = false;
-            }
-        }
-
-        // Update delivery fee display
-        function updateDeliveryFeeDisplay(fee, info) {
-            const deliveryFeeElement = document.getElementById('deliveryFeeAmount');
-            const deliveryInfoElement = document.getElementById('deliveryInfo');
-            
-            if (typeof fee === 'string') {
-                deliveryFeeElement.innerHTML = `<span class="text-info">${fee}</span>`;
-            } else if (fee === 0) {
-                deliveryFeeElement.innerHTML = '<span class="text-success">FREE</span>';
-                deliveryFeeElement.className = 'text-success';
-            } else {
-                deliveryFeeElement.innerHTML = `<span>&#8369;${fee.toFixed(2)}</span>`;
-                deliveryFeeElement.className = '';
-            }
-            
-            if (info && deliveryInfoElement) {
-                deliveryInfoElement.textContent = info;
-            }
-        }
-
-        // Update total amount
-        function updateTotalAmount(deliveryFee) {
-            const total = subtotalAmount + (typeof deliveryFee === 'number' ? deliveryFee : 19);
-            document.getElementById('totalAmount').innerHTML = `&#8369;${total.toFixed(2)}`;
-            const totalBtn = document.getElementById('totalAmountBtn');
-            if (totalBtn) totalBtn.innerHTML = `&#8369;${total.toFixed(2)}`;
-        }
-
-        // --- AJAX form submit with modal flow ---
-        document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const phoneInput = document.querySelector('input[name="PhoneNumber"]');
-            const addressInput = document.querySelector('input[name="DeliveryAddress"]');
-            const selectedPayment = document.querySelector('.payment-radio:checked');
-            const gcashNumberInput = document.querySelector('input[name="GCashNumber"]');
-            const gcashSection = document.getElementById('gcashSection');
-            const submitBtn = document.getElementById('placeOrderBtn');
-
-            // Client-side validations (same as before)
-            if (!phoneInput.value.trim()) {
-                phoneInput.focus();
-                alert('Please enter your phone number.');
-                return false;
-            }
-
-            if (!addressInput.value.trim()) {
-                alert('Your profile does not have a delivery address. Please update it on your Profile page.');
-                window.location.href = '/Profile';
-                return false;
-            }
-
-            if (!selectedPayment) {
-                alert('Please select a payment method.');
-                return false;
-            }
-
-            if (selectedPayment && selectedPayment.value === '2' && gcashSection.style.display !== 'none') {
-                if (!gcashNumberInput.value.trim()) {
-                    gcashNumberInput.focus();
-                    alert('Please enter your GCash number.');
-                    return false;
-                }
-            }
-
-            // Disable submit button and show processing state
-            submitBtn.disabled = true;
-            const originalBtnHtml = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Order...';
-
-            try {
-                const form = document.getElementById('checkoutForm');
-                const formData = new FormData(form);
-
-                const response = await fetch(window.location.pathname + window.location.search, {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Show modal with success message
-                    const msg = data.message || 'Your order has been placed.';
-                    const orderId = data.orderId;
-
-                    const modalMessageEl = document.getElementById('orderSuccessMessage');
-                    modalMessageEl.innerHTML = `
-                        <i class="fas fa-circle-check fa-3x text-success mb-3"></i>
-                        <h5 class="mb-2">Order Placed!</h5>
-                        <p class="mb-1">Thanks for choosing us for delivering your foods.</p>
-                        <p class="mb-0">You can check your order status in the <a href="/Orders">My Orders</a> section.</p>
-                    `;
-
-                    const orderModalEl = document.getElementById('orderSuccessModal');
-                    let orderModal = null;
-                    if (orderModalEl) {
-                        orderModal = (window.bootstrap && window.bootstrap.Modal) ? new bootstrap.Modal(orderModalEl) : null;
-                        if (orderModal) orderModal.show();
-                        else alert(msg);
-                    } else {
-                        alert(msg);
-                    }
-
-                    // OK button handler - redirect to confirmation
-                    document.getElementById('orderSuccessOkBtn').onclick = function() {
-                        window.location.href = '/OrderConfirmation?orderId=' + orderId;
-                    };
-                } else {
-                    // Show errors (prefer validation errors object)
-                    let errMsg = data.message || 'Unable to place order.';
-                    if (data.errors) {
-                        const errors = data.errors;
-                        const parts = [];
-                        for (const key in errors) {
-                            if (Array.isArray(errors[key])) parts.push(errors[key].join('\n'));
-                        }
-                        if (parts.length) errMsg = parts.join('\n');
-                    }
-                    alert(errMsg);
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnHtml;
-                }
-            } catch (err) {
-                console.error('Order submission error', err);
-                alert('An unexpected error occurred while placing your order. Please try again.');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnHtml;
-            }
-
-            return false;
-        });
-
-        // Initialize delivery fee calculation if address is pre-filled
-        document.addEventListener('DOMContentLoaded', function() {
-            const addressInput = document.getElementById('deliveryAddressInput');
-            if (addressInput && addressInput.value.length > 10) {
-                setTimeout(() => {
-                    calculateDeliveryFee(addressInput.value);
-                }, 500);
-            }
-        });
-    </script>
-
-    <!-- Order success modal -->
-    <div class="modal fade" id="orderSuccessModal" tabindex="-1" aria-labelledby="orderSuccessLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="orderSuccessLabel">Order Placed</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <div id="orderSuccessMessage">
-                        <i class="fas fa-circle-check fa-3x text-success mb-3"></i>
-                        <h5 class="mb-2">Order Placed!</h5>
-                        <p class="mb-1">Thanks for choosing us for delivering your foods.</p>
-                        <p class="mb-0">You can check your order status in the <a href="/Orders">My Orders</a> section.</p>
+                    <div class="mt-4">
+                        <button class="btn btn-success btn-lg w-100" id="completeOrderBtn">
+                            Complete Order
+                        </button>
                     </div>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-primary" id="orderSuccessOkBtn">OK</button>
                 </div>
             </div>
         </div>
     </div>
+</section>
+
+@section Scripts {
+    <script>
+        const subtotal = parseFloat(document.getElementById('subtotalAmount').textContent.replace(/[^0-9.]/g, '')) || 0;
+        const deliveryFee = 19;
+        const total = subtotal + deliveryFee;
+        let addressesCache = [];
+        let editingAddressId = null;
+
+        // Payment UI toggle
+        function updatePaymentUI() {
+            const isGCash = document.getElementById('payGCash').checked;
+            const codCard = document.querySelector('label[for="payCash"]');
+            const gcashCard = document.querySelector('label[for="payGCash"]');
+            codCard.classList.toggle('selected', document.getElementById('payCash').checked);
+            gcashCard.classList.toggle('selected', isGCash);
+            document.getElementById('gcashPaymentForm').style.display = isGCash ? 'block' : 'none';
+            if (isGCash) {
+                document.getElementById('gcashAmountDisplay').value = total.toFixed(2);
+            }
+        }
+        document.getElementById('payCash').addEventListener('change', updatePaymentUI);
+        document.getElementById('payGCash').addEventListener('change', updatePaymentUI);
+
+        // Special instructions counter
+        const instr = document.getElementById('specialInstructions');
+        const counter = document.getElementById('instrCounter');
+        instr.addEventListener('input', () => {
+            counter.textContent = `${instr.value.length}/250`;
+        });
+        counter.textContent = `${instr.value.length}/250`;
+
+        function clearAddressForm() {
+            document.getElementById('addrStreet').value = '';
+            document.getElementById('addrBarangay').value = '';
+            document.getElementById('addrLandmark').value = '';
+            document.getElementById('addrDefault').checked = false;
+            document.getElementById('addrStreet').classList.remove('is-invalid');
+            document.getElementById('addrBarangay').classList.remove('is-invalid');
+        }
+
+        function setEditingMode(on, id = null) {
+            editingAddressId = on ? id : null;
+            document.getElementById('newAddressForm').style.display = 'block';
+            document.getElementById('saveAddressBtnText').textContent = on ? 'Update Address' : 'Save Address';
+            document.getElementById('cancelEditAddressBtn').style.display = 'inline-block';
+        }
+
+        // Load saved addresses
+        async function loadAddresses() {
+            const sel = document.getElementById('addressSelect');
+            sel.innerHTML = '<option value="" disabled selected>Loading...</option>';
+            try {
+                const res = await fetch('/api/user/addresses');
+                if (!res.ok) throw new Error('Failed');
+                const list = await res.json();
+                addressesCache = list;
+                sel.innerHTML = '<option value="" disabled selected>Select address...</option>';
+                let defaultSet = false;
+                list.forEach(a => {
+                    const star = a.isDefault ? String.fromCharCode(9733) + ' ' : '';
+                    const text = `${star}${a.streetAddress}, ${a.barangay}, ${a.city}`;
+                    const opt = document.createElement('option');
+                    opt.value = a.id;
+                    opt.textContent = text;
+                    sel.appendChild(opt);
+                    if (a.isDefault && !defaultSet) {
+                        sel.value = a.id;
+                        defaultSet = true;
+                    }
+                });
+                const addOpt = document.createElement('option');
+                addOpt.value = 'add_new';
+                addOpt.textContent = 'Add New Address';
+                sel.appendChild(addOpt);
+                document.getElementById('editAddressBtn').disabled = !sel.value || sel.value === '' || sel.value === 'add_new';
+            } catch {
+                addressesCache = [];
+                sel.innerHTML = '<option value="" disabled selected>No addresses found</option><option value="add_new">Add New Address</option>';
+                document.getElementById('editAddressBtn').disabled = true;
+            }
+        }
+
+        // Load barangays
+        async function loadBarangays() {
+            const sel = document.getElementById('addrBarangay');
+            if (!sel) return;
+            sel.innerHTML = '<option value="" disabled selected>Loading...</option>';
+            try {
+                const res = await fetch('/api/barangays?city=Cebu%20City');
+                const list = await res.json();
+                sel.innerHTML = '<option value="" disabled selected>Select barangay...</option>';
+                list.forEach(n => {
+                    const opt = document.createElement('option');
+                    opt.value = n;
+                    opt.textContent = n;
+                    sel.appendChild(opt);
+                });
+            } catch {
+                sel.innerHTML = '<option value="" disabled selected>Select barangay...</option>';
+            }
+        }
+
+        // Show new address form
+        document.getElementById('showNewAddressBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            clearAddressForm();
+            await loadBarangays();
+            document.getElementById('newAddressForm').style.display = 'block';
+            document.getElementById('saveAddressBtnText').textContent = 'Save Address';
+            editingAddressId = null;
+            document.getElementById('cancelEditAddressBtn').style.display = 'inline-block';
+        });
+
+        // Cancel edit/add
+        document.getElementById('cancelEditAddressBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('newAddressForm').style.display = 'none';
+            editingAddressId = null;
+            clearAddressForm();
+            document.getElementById('cancelEditAddressBtn').style.display = 'none';
+        });
+
+        // Edit selected address
+        document.getElementById('editAddressBtn').addEventListener('click', async () => {
+            const sel = document.getElementById('addressSelect');
+            const id = parseInt(sel.value);
+            if (!id) return;
+            const a = addressesCache.find(x => x.id === id);
+            if (!a) return;
+            await loadBarangays();
+            document.getElementById('addrStreet').value = a.streetAddress || '';
+            document.getElementById('addrBarangay').value = a.barangay || '';
+            document.getElementById('addrLandmark').value = a.landmark || '';
+            document.getElementById('addrDefault').checked = !!a.isDefault;
+            setEditingMode(true, id);
+        });
+
+        // Address select change
+        document.getElementById('addressSelect').addEventListener('change', (e) => {
+            document.getElementById('editAddressBtn').disabled = !e.target.value || e.target.value === 'add_new';
+            if (e.target.value === 'add_new') {
+                clearAddressForm();
+                document.getElementById('newAddressForm').style.display = 'block';
+                document.getElementById('saveAddressBtnText').textContent = 'Save Address';
+                editingAddressId = null;
+                document.getElementById('cancelEditAddressBtn').style.display = 'inline-block';
+            }
+        });
+
+        // Save (create or update) address
+        document.getElementById('saveAddressBtn').addEventListener('click', async () => {
+            const street = document.getElementById('addrStreet');
+            const brgy = document.getElementById('addrBarangay');
+            const landmark = document.getElementById('addrLandmark');
+            const isDefault = document.getElementById('addrDefault').checked;
+
+            street.classList.toggle('is-invalid', !street.value.trim());
+            brgy.classList.toggle('is-invalid', !brgy.value);
+            if (!street.value.trim() || !brgy.value) return;
+
+            const payload = { streetAddress: street.value.trim(), barangay: brgy.value, city: 'Cebu City', landmark: landmark.value.trim(), isDefault };
+            let res;
+            if (editingAddressId) {
+                res = await fetch(`/api/user/addresses/${editingAddressId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            } else {
+                res = await fetch('/api/user/addresses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            }
+            if (res.ok) {
+                document.getElementById('newAddressForm').style.display = 'none';
+                clearAddressForm();
+                editingAddressId = null;
+                document.getElementById('cancelEditAddressBtn').style.display = 'none';
+                await loadAddresses();
+            } else {
+                const data = await res.json().catch(()=>({message:'Failed to save address'}));
+                alert(data.message || 'Failed to save address');
+            }
+        });
+
+        // Submit order
+        document.getElementById('completeOrderBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('completeOrderBtn');
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Placing order...';
+
+            const phone = document.getElementById('phoneInput');
+            const name = document.getElementById('customerNameInput');
+            const pay = document.querySelector('input[name="paymentMethod"]:checked').value;
+            const gcashNum = document.getElementById('gcashNumber');
+            const instr = document.getElementById('specialInstructions');
+            const addrSel = document.getElementById('addressSelect');
+
+            // Validate phone and name
+            const phoneValid = /^(09\d{9}|\+639\d{9})$/.test(phone.value.trim());
+            phone.classList.toggle('is-invalid', !phoneValid);
+            name.classList.toggle('is-invalid', !name.value.trim());
+            if (!name.value.trim() || !phoneValid) { btn.disabled = false; btn.innerHTML = originalText; return; }
+
+            // Require address selection
+            const selected = addrSel.value;
+            if (!selected || selected === 'add_new') { alert('Please select a saved address or add a new one.'); btn.disabled = false; btn.innerHTML = originalText; return; }
+
+            // GCash validation
+            if (pay === 'gcash') {
+                const validG = /^\d{11}$/.test(gcashNum.value.trim());
+                gcashNum.classList.toggle('is-invalid', !validG);
+                if (!validG) { btn.disabled = false; btn.innerHTML = originalText; return; }
+            }
+
+            const payload = {
+                order_type: 'delivery',
+                special_instructions: instr.value.trim(),
+                payment_method: pay,
+                phone_number: phone.value.trim(),
+                customer_name: name.value.trim(),
+                address_id: parseInt(selected)
+            };
+            if (pay === 'gcash') payload.gcash_number = gcashNum.value.trim();
+
+            try {
+                const res = await fetch('/api/orders/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const ct = res.headers.get('content-type') || '';
+                let data = null;
+                if (ct.includes('application/json')) {
+                    data = await res.json().catch(() => null);
+                } else {
+                    const text = await res.text().catch(() => '');
+                    data = { message: text };
+                }
+
+                if (res.status === 401) {
+                    window.location.href = '/Login?returnUrl=' + encodeURIComponent('/Checkout');
+                    return;
+                }
+
+                if (res.ok && data && data.success) {
+                    window.location.href = `/OrderConfirmation?orderId=${data.orderId}`;
+                } else {
+                    const msg = (data && data.message) || 'Unable to place order';
+                    alert(msg);
+                }
+            } catch (e) {
+                alert('Unexpected network error. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        // Init
+        (async () => {
+            updatePaymentUI();
+            await loadAddresses();
+            await loadBarangays();
+            // Initialize totals display
+            document.getElementById('deliveryFeeAmount').innerHTML = `&#8369;${deliveryFee.toFixed(2)}`;
+            document.getElementById('totalAmount').innerHTML = `&#8369;${total.toFixed(2)}`;
+        })();
+    </script>
 }
 
 @section Styles {
     <style>
-        .checkout-page .card {
-            border: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .checkout-page .form-control:focus {
-            border-color: #8c1007;
-            box-shadow: 0 0 0 0.2rem rgba(140, 16, 7, 0.25);
-        }
-        
-        .delivery-fee-calculating {
-            color: #6c757d;
-            font-style: italic;
-        }
-        
-        .address-suggestions {
-            background: white;
-            border: 1px solid #ddd;
-            border-top: none;
-            border-radius: 0 0 4px 4px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        
-        .address-suggestion {
-            padding: 8px 12px;
+        .checkout-page .card { border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .checkout-page .form-control:focus { border-color: #8c1007; box-shadow: 0 0 0 0.2rem rgba(140,16,7,0.25); }
+        #completeOrderBtn { position: sticky; bottom: 0; }
+        #gcashPaymentForm input[readonly] { cursor: default; }
+        #addressSelect { font-family: system-ui, -apple-system, Segoe UI, "Segoe UI Symbol", Roboto, Helvetica, Arial, sans-serif; }
+
+        /* Payment method card styles (match screenshot) */
+        .payment-option-card {
+            display: flex;
+            align-items: center;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
             cursor: pointer;
-            border-bottom: 1px solid #eee;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            background: #fff;
         }
-        
-        .address-suggestion:hover {
-            background-color: #f8f9fa;
+        .payment-option-card:hover { background: #f9fafb; }
+        .payment-option-card input { display: none; }
+        .payment-option-content { display: flex; align-items: center; width: 100%; }
+        .payment-icon {
+            font-size: 1.25rem;
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; background: #eef2f4; margin-right: 12px;
         }
-        
-        .order-summary-card {
-            border-left: 4px solid #8c1007;
-        }
-        
-        #placeOrderBtn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        .pac-container {
-            z-index: 9999 !important;
-        }
+        .payment-label { font-weight: 600; color: #0f172a; letter-spacing: .5px; }
+        .payment-option-card.selected { border-color: #dc3545; background: #fef2f2; box-shadow: 0 0 0 2px rgba(220,53,69,.05); }
 
-        #gcashSection {
-            transition: all 0.3s ease;
-        }
-
-        #gcashSection .card-body {
-            position: relative;
-            overflow: hidden;
-        }
-
-        #gcashSection .card-body::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(33, 150, 243, 0.1) 0%, transparent 70%);
-            animation: shimmer 3s infinite;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        #gcashSection .form-control,
-        #gcashSection .form-label,
-        #gcashSection .alert {
-            position: relative;
-            z-index: 10;
-        }
-
-        #gcashSection input[name="GCashNumber"] {
-            background-color: white !important;
-            cursor: text !important;
-            pointer-events: auto !important;
-        }
-
-        @@keyframes shimmer {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        /* GCash card styles */
+        .gcash-card { background: #eef6ff; border: 1px solid #93c5fd; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+        .gcash-header-icon { color: #2563eb; font-size: 1.25rem; }
+        .gcash-title { color: #2563eb; font-weight: 700; }
+        .gcash-instructions { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; }
+        .gcash-instructions ol { color: #334155; font-size: .925rem; }
     </style>
 }

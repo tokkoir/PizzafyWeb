@@ -19,6 +19,9 @@ namespace PizzafyWeb.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<UserAddress> UserAddresses { get; set; }
+        public DbSet<Barangay> Barangays { get; set; }
+        public DbSet<ProductLog> ProductLogs { get; set; } // NEW
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -180,6 +183,70 @@ namespace PizzafyWeb.Data
                     new Payment { PaymentId = 2, PaymentName = "GCash" }
                 );
             });
+
+            // Configure UserAddress entity
+            modelBuilder.Entity<UserAddress>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.IsDefault);
+            });
+
+            // Configure Barangay entity
+            modelBuilder.Entity<Barangay>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.City);
+            });
+
+            // ProductLog mapping
+            modelBuilder.Entity<ProductLog>(entity =>
+            {
+                entity.HasKey(e => e.LogId);
+                entity.ToTable("product_log");
+                entity.Property(e => e.ChangedAt).HasColumnName("changed_at");
+                entity.HasIndex(e => e.MenuItemId);
+                entity.HasIndex(e => e.Action);
+                entity.HasIndex(e => e.ChangedAt);
+            });
         }
+    }
+}
+
+// Minimal model fallback to fix compile in case file not added by project system
+namespace PizzafyWeb.Models
+{
+    using System;
+    using System.ComponentModel.DataAnnotations;
+    using System.ComponentModel.DataAnnotations.Schema;
+
+    [Table("product_log")]
+    public class ProductLog
+    {
+        [Key]
+        [Column("log_id")]
+        public int LogId { get; set; }
+
+        [Column("menu_item_id")]
+        public int? MenuItemId { get; set; }
+
+        [Column("item_name")]
+        [MaxLength(100)]
+        public string? ItemName { get; set; }
+
+        [Required]
+        [Column("action")]
+        [MaxLength(20)]
+        public string Action { get; set; } = string.Empty;
+
+        [Column("changed_by")]
+        [MaxLength(50)]
+        public string? ChangedBy { get; set; }
+
+        [Column("changed_at")]
+        public DateTime ChangedAt { get; set; }
+
+        [Column("details")]
+        public string? Details { get; set; }
     }
 }

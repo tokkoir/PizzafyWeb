@@ -21,8 +21,7 @@ namespace PizzafyWeb.Models
         public string Address { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Phone number is required")]
-        [StringLength(20, ErrorMessage = "Phone number cannot be longer than 20 characters")]
-        [Phone(ErrorMessage = "Invalid phone number format")]
+        [RegularExpression(@"^09\d{9}$", ErrorMessage = "Invalid phone number format")]
         public string PhoneNumber { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Password is required")]
@@ -35,7 +34,6 @@ namespace PizzafyWeb.Models
         [Compare("Password", ErrorMessage = "Passwords do not match")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
-        // New: Requested role selection. Default to Customer.
         [Required]
         public UserType RequestedRole { get; set; } = UserType.Customer;
     }

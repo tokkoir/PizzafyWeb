@@ -35,7 +35,14 @@
                                                 <option value="0">Select a category</option>
                                                 @foreach (var category in Model.Categories.OrderBy(c => c.CategoryName.ToLower() == "pizza" ? 0 : c.CategoryName.ToLower() == "sides" ? 1 : c.CategoryName.ToLower() == "beverages" ? 2 : 100).ThenBy(c => c.CategoryName))
                                                 {
-                                                    <option value="@category.CategoryId" data-category-name="@category.CategoryName" selected="@(category.CategoryId == Model.CategoryId)">@category.CategoryName</option>
+                                                    if (category.CategoryId == Model.CategoryId)
+                                                    {
+                                                        <option value="@category.CategoryId" data-category-name="@category.CategoryName" selected>@category.CategoryName</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@category.CategoryId" data-category-name="@category.CategoryName">@category.CategoryName</option>
+                                                    }
                                                 }
                                             </select>
                                             <span asp-validation-for="CategoryId" class="text-danger"></span>
@@ -82,7 +89,14 @@
                                                 <option value="">Select a size</option>
                                                 @foreach (var size in Model.AvailableSizes)
                                                 {
-                                                    <option value="@size.SizeId" selected="@(size.SizeId == Model.SelectedSizeId)">@size.SizeName</option>
+                                                    if (size.SizeId == Model.SelectedSizeId)
+                                                    {
+                                                        <option value="@size.SizeId" selected>@size.SizeName</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@size.SizeId">@size.SizeName</option>
+                                                    }
                                                 }
                                             </select>
                                             <span asp-validation-for="SelectedSizeId" class="text-danger"></span>

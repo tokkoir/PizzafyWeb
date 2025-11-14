@@ -45,7 +45,6 @@ namespace PizzafyWeb.Models
         [Column("user_type")]
         public UserType UserType { get; set; } = UserType.Customer;
 
-        // Account status for approval workflow (default Pending to force review for admins)
         [Required]
         [Column("account_status")]
         public AccountStatus AccountStatus { get; set; } = AccountStatus.Pending;

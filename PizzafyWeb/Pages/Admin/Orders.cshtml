@@ -104,14 +104,13 @@
                     <option value="preparing" selected="@(Model.StatusFilter == "preparing")">Preparing</option>
                     <option value="ready" selected="@(Model.StatusFilter == "ready")">Ready</option>
                     <option value="completed" selected="@(Model.StatusFilter == "completed")">Completed</option>
-                    <option value="cancelled" selected="@(Model.StatusFilter == "cancelled")">Cancelled</option>
                 </select>
             </div>
             <div class="col-md-6">
                 <label class="form-label">Search Orders</label>
                 <div class="input-group">
                     <input type="text" name="search" class="form-control" 
-                           placeholder="Search by Order ID, Customer Name, Phone..." 
+                           placeholder="Search by Customer Name..." 
                            value="@Model.SearchTerm" />
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-search"></i>
@@ -126,8 +125,8 @@
                     </a>
                 </div>
             </div>
-            <!-- Hidden field to maintain current page -->
-            <input type="hidden" name="page" value="1" />
+            <!-- Hidden field to reset to page 1 when filters/search change -->
+            <input type="hidden" name="pg" value="1" />
         </form>
     </div>
 </div>
@@ -166,6 +165,7 @@
                             <th>Total</th>
                             <th>Status</th>
                             <th>Order Date</th>
+                            <th>Payment</th>
                             <th>Paid</th>
                             <th>Actions</th>
                         </tr>
@@ -221,6 +221,12 @@
                                     <small class="text-muted">@order.TimeAgo</small>
                                 </td>
                                 <td>
+                                    @{ var pm = order.PaymentMethod?.ToLower() ?? ""; }
+                                    <span class="badge bg-light text-dark">
+                                        @(pm.Contains("gcash") ? "GCash" : (pm.Contains("cash") ? "COD" : (string.IsNullOrWhiteSpace(order.PaymentMethod) ? "N/A" : order.PaymentMethod)))
+                                    </span>
+                                </td>
+                                <td>
                                     @if (order.IsPaid)
                                     {
                                         <span class="badge bg-success">Paid</span>
@@ -235,12 +241,11 @@
                                         <input type="hidden" name="orderId" value="@order.OrderId" />
                                         <input type="hidden" name="status" value="@Model.StatusFilter" />
                                         <input type="hidden" name="search" value="@Model.SearchTerm" />
-                                        <input type="hidden" name="page" value="@Model.CurrentPage" />
+                                        <input type="hidden" name="pg" value="@Model.CurrentPage" />
                                         <input type="hidden" name="lastUpdateTicks" value="@order.LastUpdate.Ticks" />
                                         
-                                        <select name="statusId" class="form-select form-select-sm" 
-                                                onchange="this.form.submit()" 
-                                                style="width: 160px;" disabled="@(isTerminal ? "disabled" : null)">
+                                        <select name="statusId" class="form-select form-select-sm action-select" 
+                                                onchange="this.form.submit()">
                                             <option value="@order.StatusId" selected>@order.StatusName</option>
                                             @if (!isTerminal && allowedNext != null)
                                             {
@@ -266,7 +271,7 @@
         <ul class="pagination justify-content-center">
             <!-- Previous Page -->
             <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
-                <a class="page-link" href="?status=@Model.StatusFilter&search=@Model.SearchTerm&page=@(Model.CurrentPage - 1)">
+                <a class="page-link" href="?status=@Model.StatusFilter&search=@Model.SearchTerm&pg=@(Model.CurrentPage - 1)">
                     <i class="fas fa-chevron-left"></i>
                 </a>
             </li>
@@ -275,13 +280,13 @@
             @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
             {
                 <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                    <a class="page-link" href="?status=@Model.StatusFilter&search=@Model.SearchTerm&page=@i">@i</a>
+                    <a class="page-link" href="?status=@Model.StatusFilter&search=@Model.SearchTerm&pg=@i">@i</a>
                 </li>
             }
 
             <!-- Next Page -->
             <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
-                <a class="page-link" href="?status=@Model.StatusFilter&search=@Model.SearchTerm&page=@(Model.CurrentPage + 1)">
+                <a class="page-link" href="?status=@Model.StatusFilter&search=@Model.SearchTerm&pg=@(Model.CurrentPage + 1)">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             </li>
@@ -382,9 +387,7 @@
         function lockStatusUpdates(form) {
             if (statusUpdateLocked) return false;
             statusUpdateLocked = true;
-            // Disable all selects to prevent multi-change
             document.querySelectorAll('select[name="statusId"]').forEach(s => s.disabled = true);
-            // Disable submit buttons as well
             form.querySelectorAll('button,select,input').forEach(el => el.setAttribute('disabled','disabled'));
             return true;
         }
@@ -397,6 +400,8 @@
         .stat-mini{text-align:center}
         .stat-mini .stat-value{display:block;font-size:1.2rem;font-weight:700;color:#8c1007}
         .stat-mini .stat-label{font-size:.8rem;color:#666}
+        .action-select{ width: 120px; min-width: 0; display: inline-block; }
+        @@media (max-width: 768px){ .action-select{ width: 110px; } }
     </style>
 }
 

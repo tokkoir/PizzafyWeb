@@ -28,7 +28,7 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label asp-for="ProductName" class="form-label">Product Name *</label>
-                                            <input asp-for="ProductName" class="form-control" placeholder="Enter product name" />
+                                            <input asp-for="ProductName" class="form-control" placeholder="Enter product name" id="productNameInput" />
                                             <span asp-validation-for="ProductName" class="text-danger"></span>
                                         </div>
                                     </div>
@@ -47,6 +47,8 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <input type="hidden" asp-for="ExistingImageName" id="existingImageName" />
 
                                 <div class="form-group">
                                     <label asp-for="ImageFile" class="form-label">Product Image</label>
@@ -301,6 +303,152 @@
                 }
             }
             updatePreview();
+        });
+
+        // Client-side auto-fill for product name
+        document.getElementById('productNameInput').addEventListener('input', async function() {
+            const productName = this.value.trim();
+            
+            if (productName.length < 3) {
+                // Clear fields if input is too short
+                clearAutoFill();
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/Admin/AddProduct?handler=AutoFillProduct&name=${encodeURIComponent(productName)}`);
+                const product = await response.json();
+                
+                if (product && product.productId) {
+                    // Prefill fields with received data
+                    document.getElementById('previewName').textContent = product.productName;
+                    document.getElementById('previewDescription').textContent = product.description;
+                    document.getElementById('previewCategory').textContent = product.categoryName;
+                    
+                    // Set ExistingImageName value
+                    document.getElementById('existingImageName').value = product.imageFileName;
+                    
+                    // Update image preview if no new file is selected
+                    const imageInput = document.getElementById('imageInput');
+                    if (!imageInput.files.length) {
+                        document.getElementById('previewImage').innerHTML = `<img src="/images/products/${product.imageFileName}" alt="Product Image" />`;
+                    }
+                    
+                    // Prefill category and size if available
+                    const categorySelect = document.getElementById('categorySelect');
+                    categorySelect.value = product.categoryId;
+                    await loadSizesForCategory(product.categoryId);
+                    
+                    const sizeSelect = document.getElementById('sizeSelect');
+                    sizeSelect.value = product.selectedSizeId;
+                    
+                    // Prefill price
+                    const priceInput = document.querySelector('input[name="Price"]');
+                    priceInput.value = (product.price / 100).toFixed(2);
+                    
+                    // Update preview
+                    updatePreview();
+                } else {
+                    // Clear fields if no product found
+                    clearAutoFill();
+                }
+            } catch (error) {
+                console.error('Error fetching product data:', error);
+                clearAutoFill();
+            }
+        });
+
+        function clearAutoFill() {
+            document.getElementById('previewName').textContent = 'Product Name';
+            document.getElementById('previewDescription').textContent = 'No description';
+            document.getElementById('previewCategory').textContent = 'Category';
+            document.getElementById('existingImageName').value = '';
+            document.getElementById('previewImage').innerHTML = '<i class="fas fa-image"></i><span>No image</span>';
+            updatePreview();
+        }
+
+        // Auto-fetch existing product info by name
+        const nameInput = document.getElementById('productNameInput');
+        let prefillLock = false;
+        async function tryPrefillByName() {
+            if (prefillLock) return;
+            const name = (nameInput.value || '').trim();
+            if (name.length < 2) return;
+            try {
+                const res = await fetch(`/Admin/AddProduct?handler=ProductInfo&name=${encodeURIComponent(name)}`);
+                const data = await res.json();
+                if (!data || !data.found) return;
+
+                // Set category
+                const catSel = document.getElementById('categorySelect');
+                if (String(catSel.value) !== String(data.categoryId)) {
+                    catSel.value = String(data.categoryId);
+                    await loadSizesForCategory(String(data.categoryId));
+                }
+                document.getElementById('previewCategory').textContent = data.categoryName || 'Category';
+
+                // Set description if empty or shorter
+                const desc = document.querySelector('textarea[name="Description"]');
+                if (!desc.value || desc.value.length < (data.description?.length || 0)) {
+                    desc.value = data.description || '';
+                    document.getElementById('previewDescription').textContent = desc.value || 'No description';
+                }
+
+                // If there's an existing image and no new upload yet, show it and keep filename in hidden field
+                const existing = (data.image || '').trim();
+                const imageInput = document.getElementById('imageInput');
+                const previewImage = document.getElementById('previewImage');
+                const existingHidden = document.getElementById('existingImageName');
+                if (existing && !imageInput.files.length) {
+                    existingHidden.value = existing;
+                    const url = `/images/products/${existing}`;
+                    document.getElementById('imagePreview').innerHTML = `<img src="${url}" alt="Existing" />`;
+                    previewImage.innerHTML = `<img src="${url}" alt="Existing" />`;
+                }
+            } catch (e) {
+                console.warn('prefill failed', e);
+            }
+        }
+
+        function clearAllProductInfo() {
+            // Reset selects and inputs
+            const catSel = document.getElementById('categorySelect');
+            if (catSel) catSel.value = '0';
+            const sizeSelect = document.getElementById('sizeSelect');
+            if (sizeSelect) sizeSelect.innerHTML = '<option value="">Select a size</option>';
+            const priceInput = document.querySelector('input[name="Price"]');
+            if (priceInput) priceInput.value = '';
+            const desc = document.querySelector('textarea[name="Description"]');
+            if (desc) desc.value = '';
+
+            // Clear image inputs and hidden existing image
+            const imageInput = document.getElementById('imageInput');
+            if (imageInput) imageInput.value = '';
+            const existingHidden = document.getElementById('existingImageName');
+            if (existingHidden) existingHidden.value = '';
+
+            // Reset previews
+            const previewName = document.getElementById('previewName');
+            if (previewName) previewName.textContent = 'Product Name';
+            const previewDesc = document.getElementById('previewDescription');
+            if (previewDesc) previewDesc.textContent = 'No description';
+            const previewCat = document.getElementById('previewCategory');
+            if (previewCat) previewCat.textContent = 'Category';
+            const imgPrev = document.getElementById('imagePreview');
+            if (imgPrev) imgPrev.innerHTML = '<i class="fas fa-image"></i><span>No image selected</span>';
+            const previewImg = document.getElementById('previewImage');
+            if (previewImg) previewImg.innerHTML = '<i class="fas fa-image"></i><span>No image</span>';
+            const previewPrices = document.getElementById('previewPrices');
+            if (previewPrices) previewPrices.innerHTML = '<span class="no-prices">No price set</span>';
+        }
+
+        nameInput.addEventListener('blur', tryPrefillByName);
+        nameInput.addEventListener('change', () => { document.getElementById('existingImageName').value = ''; });
+        nameInput.addEventListener('input', () => {
+            const val = (nameInput.value || '').trim();
+            if (val.length === 0) {
+                clearAllProductInfo();
+            }
         });
     </script>
 }

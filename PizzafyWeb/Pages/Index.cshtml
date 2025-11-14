@@ -58,8 +58,11 @@
                     
                     <!-- Search Bar -->
                     <div class="search-container mb-4">
-                        <div class="position-relative d-inline-block">
-                            <input type="text" id="searchInput" class="form-control search-input" style="width:450px;height:60px;border-radius:30px;border:3px solid #ddd;padding-left:25px;padding-right:60px;font-size:1.2rem;box-shadow:0 4px 15px rgba(0,0,0,0.1);" placeholder="Search in menu" />
+                        <div class="position-relative mx-auto" style="max-width:100%; width:450px;">
+                            <input type="text" id="searchInput" class="form-control search-input" style="width:100%;height:60px;border-radius:30px;border:3px solid #ddd;padding-left:25px;padding-right:110px;font-size:1.2rem;box-shadow:0 4px 15px rgba(0,0,0,0.1);" placeholder="Search in menu" />
+                            <button id="clearSearchBtn" class="clear-btn position-absolute" aria-label="Clear search" title="Clear" style="right:60px;top:10px;width:40px;height:40px;border-radius:50%;background:#f3f3f3;border:none;color:#8c1007;display:none;align-items:center;justify-content:center;">
+                                <i class="fas fa-times"></i>
+                            </button>
                             <button class="search-btn position-absolute" style="right:10px;top:10px;width:40px;height:40px;border-radius:50%;background:#8c1007;border:none;color:white;display:flex;align-items:center;justify-content:center;">
                                 <i class="fas fa-search"></i>
                             </button>
@@ -68,37 +71,37 @@
                     
                     <!-- Category Icons with Labels (aligned) -->
                     <div class="category-chooser mb-5">
-                        <div class="d-flex justify-content-center align-items-start" style="gap:60px; flex-wrap:wrap;">
+                        <div class="d-flex justify-content-center align-items-start flex-wrap" style="gap:clamp(20px, 5vw, 60px);">
                             <div class="category-item text-center">
-                                <button class="category-btn active" data-category="all" style="background:#8c1007;color:white;border:none;border-radius:18px;width:90px;height:90px;margin:0;font-size:2.2rem;box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
+                                <button class="category-btn active" data-category="all" style="background:#8c1007;color:white;border:none;border-radius:18px;width:clamp(70px, 15vw, 90px);height:clamp(70px, 15vw, 90px);margin:0;font-size:clamp(1.8rem, 4vw, 2.2rem);box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
                                     <i class="fas fa-th-large"></i>
                                 </button>
                                 <div class="mt-2">
-                                    <small style="color:#8c1007;font-weight:700;font-size:0.9rem;">ALL</small>
+                                    <small style="color:#8c1007;font-weight:700;font-size:clamp(0.75rem, 2vw, 0.9rem);">ALL</small>
                                 </div>
                             </div>
                             <div class="category-item text-center">
-                                <button class="category-btn" data-category="pizza" style="background:#8c1007;color:white;border:none;border-radius:18px;width:90px;height:90px;margin:0;font-size:2.2rem;box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
+                                <button class="category-btn" data-category="pizza" style="background:#8c1007;color:white;border:none;border-radius:18px;width:clamp(70px, 15vw, 90px);height:clamp(70px, 15vw, 90px);margin:0;font-size:clamp(1.8rem, 4vw, 2.2rem);box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
                                     <i class="fas fa-pizza-slice"></i>
                                 </button>
                                 <div class="mt-2">
-                                    <small style="color:#8c1007;font-weight:700;font-size:0.9rem;">PIZZA</small>
+                                    <small style="color:#8c1007;font-weight:700;font-size:clamp(0.75rem, 2vw, 0.9rem);">PIZZA</small>
                                 </div>
                             </div>
                             <div class="category-item text-center">
-                                <button class="category-btn" data-category="sides" style="background:#8c1007;color:white;border:none;border-radius:18px;width:90px;height:90px;margin:0;font-size:2.2rem;box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
+                                <button class="category-btn" data-category="sides" style="background:#8c1007;color:white;border:none;border-radius:18px;width:clamp(70px, 15vw, 90px);height:clamp(70px, 15vw, 90px);margin:0;font-size:clamp(1.8rem, 4vw, 2.2rem);box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
                                     <i class="fas fa-hamburger"></i>
                                 </button>
                                 <div class="mt-2">
-                                    <small style="color:#8c1007;font-weight:700;font-size:0.9rem;">SIDES</small>
+                                    <small style="color:#8c1007;font-weight:700;font-size:clamp(0.75rem, 2vw, 0.9rem);">SIDES</small>
                                 </div>
                             </div>
                             <div class="category-item text-center">
-                                <button class="category-btn" data-category="beverages" style="background:#8c1007;color:white;border:none;border-radius:18px;width:90px;height:90px;margin:0;font-size:2.2rem;box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
+                                <button class="category-btn" data-category="beverages" style="background:#8c1007;color:white;border:none;border-radius:18px;width:clamp(70px, 15vw, 90px);height:clamp(70px, 15vw, 90px);margin:0;font-size:clamp(1.8rem, 4vw, 2.2rem);box-shadow:0 6px 20px rgba(140,16,7,0.4);transition:all 0.3s ease;">
                                     <i class="fas fa-glass-whiskey"></i>
                                 </button>
                                 <div class="mt-2">
-                                    <small style="color:#8c1007;font-weight:700;font-size:0.9rem;">BEVERAGES</small>
+                                    <small style="color:#8c1007;font-weight:700;font-size:clamp(0.75rem, 2vw, 0.9rem);">BEVERAGES</small>
                                 </div>
                             </div>
                         </div>
@@ -356,15 +359,38 @@ else
         // Search functionality
         let searchTimeout;
         const searchInputEl = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
         if (searchInputEl) {
+            const toggleClearBtn = () => {
+                if (!clearBtn) return;
+                const hasText = !!searchInputEl.value;
+                clearBtn.style.display = hasText ? 'flex' : 'none';
+            };
+
             searchInputEl.addEventListener('input', function() {
                 clearTimeout(searchTimeout);
                 currentSearch = this.value.toLowerCase();
+                toggleClearBtn();
                 searchTimeout = setTimeout(async () => {
                     currentPage = 1;
                     await loadProducts();
                 }, 500);
             });
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', async function() {
+                    clearTimeout(searchTimeout);
+                    searchInputEl.value = '';
+                    currentSearch = '';
+                    toggleClearBtn();
+                    currentPage = 1;
+                    await loadProducts();
+                    searchInputEl.focus();
+                });
+            }
+
+            // Initialize clear button visibility on load
+            toggleClearBtn();
         }
 
         // Load products via AJAX
@@ -468,9 +494,11 @@ else
                 ? `<img src="/images/products/${product.image}" alt="${product.itemName}" style="width:160px;height:160px;border-radius:50%;object-fit:cover;margin:0 auto;display:block;background:transparent;" />`
                 : `<div style="width:160px;height:160px;border-radius:50%;background:transparent;margin:0 auto;"></div>`;
 
-            const sizesHtml = (product.sizes || []).map(size =>
-                `<option value="${size.sizeId}" data-price="${size.price}" data-price-id="${size.priceId}">${size.sizeName}</option>`
-            ).join('');
+            const sizesHtml = (product.sizes || []).map(size => {
+                const text = size.isAvailable ? size.sizeName : `${size.sizeName} - Unavailable`;
+                const disabled = size.isAvailable ? '' : 'disabled';
+                return `<option value="${size.sizeId}" data-price="${size.price}" data-price-id="${size.priceId}" ${disabled}>${text}</option>`;
+            }).join('');
 
             // Use lighter background and dark text for disabled cards so overlay is visible
             const cardBg = isDisabled ? '#fffbe6' : '#8c1007';
@@ -507,17 +535,23 @@ else
                     </div>
                 </div>`;
 
-            // Set/change price on size change
+            // Set/change price on size change and ensure first available is selected
             const sizeSelect = col.querySelector('.size-select');
             const priceDisplay = col.querySelector('.product-price');
+            const addBtn = col.querySelector('.add-to-cart-btn');
             if (sizeSelect && priceDisplay) {
                 const apply = () => {
+                    if (sizeSelect.options[sizeSelect.selectedIndex]?.disabled) {
+                        const idx = Array.from(sizeSelect.options).findIndex(o => !o.disabled);
+                        if (idx >= 0) sizeSelect.selectedIndex = idx;
+                    }
                     const opt = sizeSelect.options[sizeSelect.selectedIndex];
-                    const p = parseFloat(opt.dataset.price);
-                    if (!isNaN(p)) priceDisplay.textContent = `\u20B1${p.toFixed(2)}`; // use Unicode peso sign
+                    const p = parseFloat(opt?.dataset.price);
+                    if (!isNaN(p)) priceDisplay.textContent = `\u20B1${p.toFixed(2)}`;
+                    if (addBtn) addBtn.disabled = Array.from(sizeSelect.options).every(o => o.disabled);
                 };
                 sizeSelect.addEventListener('change', apply);
-                // initialize to first size price
+                // initialize to first available size price
                 apply();
             }
 
@@ -565,8 +599,8 @@ else
             const sizeSelect = card.querySelector('.size-select');
             const selected = sizeSelect.options[sizeSelect.selectedIndex];
             const priceId = selected.getAttribute('data-price-id');
-            if (!priceId) {
-                console.warn('Missing price id on size option');
+            if (!priceId || selected.disabled) {
+                console.warn('Selected size is unavailable.');
                 return;
             }
             button.disabled = true;

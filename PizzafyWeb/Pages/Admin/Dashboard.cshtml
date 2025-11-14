@@ -80,9 +80,14 @@
         <h3 class="dashboard-section-title">
             <i class="fas fa-chart-line me-2 text-danger"></i>Sales Overview
         </h3>
-        <button class="btn btn-danger btn-sm">
-            <i class="fas fa-print me-1"></i>Print Report
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-danger btn-sm" type="button" id="exportPdfBtn">
+                <i class="fas fa-file-pdf me-1"></i>Export PDF
+            </button>
+            <button class="btn btn-danger btn-sm" type="button" id="printReportBtn">
+                <i class="fas fa-print me-1"></i>Print Report
+            </button>
+        </div>
     </div>
     
     <div class="row g-3">
@@ -157,16 +162,16 @@
         <div class="customer-section">
             <div class="customer-header">CUSTOMER NAME</div>
             
-            <div class="customer-entries">
+            <div class="customer-entries" id="customerList">
                 @if (Model.CustomerPurchases.Any())
                 {
-                    var groupedCustomers = Model.CustomerPurchases.GroupBy(p => p.CustomerName).Take(10);
-                    foreach (var purchase in groupedCustomers)
+                    var groupedCustomers = Model.CustomerPurchases.GroupBy(p => p.UserId).Take(200);
+                    foreach (var group in groupedCustomers)
                     {
-                        var customerPurchase = purchase.First();
-                        <div class="customer-entry" onclick="viewCustomerOrders('@customerPurchase.CustomerName')">
+                        var sample = group.First();
+                        <div class="customer-entry" data-user-id="@sample.UserId">
                             <i class="fas fa-user customer-icon"></i>
-                            <span class="customer-link">@customerPurchase.CustomerName</span>
+                            <a href="#" class="customer-link" data-user-id="@sample.UserId" data-name="@sample.CustomerName">@sample.CustomerName</a>
                         </div>
                     }
                 }
@@ -184,7 +189,7 @@
 
 <!-- Customer Orders Modal -->
 <div class="modal fade" id="customerOrdersModal" tabindex="-1" aria-labelledby="customerOrdersModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="customerOrdersModalLabel">
@@ -200,9 +205,6 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-success" onclick="exportCustomerOrders()">
-                    <i class="fas fa-download me-1"></i>Export Customer Orders
-                </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -211,7 +213,7 @@
 
 <!-- Order Details Modal -->
 <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="orderDetailsModalLabel">
@@ -227,9 +229,6 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-success" onclick="exportOrderDetails()">
-                    <i class="fas fa-download me-1"></i>Export Order
-                </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -458,307 +457,215 @@
             padding: 40px 24px;
         }
         
-        /* Remove old styles */
-        .purchase-details-card,
-        .customer-name-header,
-        .customer-list,
-        .customer-item,
-        .customer-avatar,
-        .customer-info,
-        .customer-name,
-        .customer-meta,
-        .customer-total {
-            display: none;
+        .order-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #fafafa;
+            cursor: pointer;
+            transition: .15s;
+        }
+        
+        .order-list-item:hover {
+            background: #f0f4ff;
+            border-color: #cfe2ff;
+        }
+        
+        .order-id-badge {
+            background: #4f7df3;
+            color: #fff;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .order-status {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        
+        .status-Pending {
+            background: #ffe8a1;
+            color: #8c6d00;
+        }
+        
+        .status-Preparing {
+            background: #bde5ff;
+            color: #004f7d;
+        }
+        
+        .status-Ready {
+            background: #d0c4ff;
+            color: #4b2ca3;
+        }
+        
+        .status-Completed {
+            background: #c7f5d9;
+            color: #0e6b2f;
+        }
+        
+        .status-Cancelled {
+            background: #f8d7da;
+            color: #842029;
+        }
+        
+        @@media print {
+            body {
+                background: #fff !important;
+            }
+            
+            .admin-page-header,
+            .purchase-header,
+            #customerSearch,
+            nav,
+            .btn,
+            .modal {
+                display: none !important;
+            }
+            
+            .stock-card,
+            .sales-card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            
+            .table td,
+            .table th {
+                padding: .4rem;
+            }
+            
+            .print-title {
+                font-size: 24px;
+                font-weight: 700;
+                margin-bottom: 10px;
+            }
+            
+            .print-sub {
+                font-size: 12px;
+                color: #666;
+                margin-bottom: 20px;
+            }
+            
+            .print-section {
+                margin-bottom: 18px;
+            }
+            
+            .badge {
+                border: 1px solid #ccc;
+            }
+        }
+
+        .order-details-table{width:100%;border-collapse:collapse;table-layout:fixed}
+        .order-details-table thead th{background:#f8f9fa;font-size:12px;font-weight:600;letter-spacing:.3px;border-bottom:1px solid #dee2e6;padding:8px}
+        .order-details-table tbody td{padding:6px 8px;font-size:13px;border-bottom:1px solid #eee}
+        .order-details-table tfoot td{padding:8px;font-size:13px;font-weight:600}
+        .order-details-table th:nth-child(1){width:42%;}
+        .order-details-table th:nth-child(2){width:14%;}
+        .order-details-table th:nth-child(3){width:10%;text-align:center}
+        .order-details-table th:nth-child(4){width:14%;text-align:right}
+        .order-details-table th:nth-child(5){width:20%;text-align:right}
+        .order-details-table td.size{text-align:left}
+        .order-details-table td.qty{text-align:center;font-weight:600}
+        .order-details-table td.price, .order-details-table td.subtotal{ text-align:right; white-space:nowrap; }
+        .order-details-table tfoot tr.total-row td{background:#e6f4ec;border-top:1px solid #c9e6d4}
+        .order-details-header{margin-bottom:.75rem}
+        .order-meta-block{display:flex;gap:18px;flex-wrap:wrap;margin-top:.25rem}
+        .order-meta-item{min-width:220px;font-size:13px;line-height:1.3}
+        .order-meta-item span.label{display:inline-block;font-weight:600;color:#495057;width:70px}
+        .order-status.badge{font-size:11px;font-weight:600;padding:6px 10px;margin-left:4px}
+        .order-header-row{display:flex;align-items:center;justify-content:space-between}
+        .order-header-row .order-id{font-weight:600;font-size:16px}
+        .order-date{font-size:12px;color:#6c757d;margin-top:2px}
+        @@media (max-width: 768px){
+            .order-meta-item{min-width:100%;}
+            .order-meta-item span.label{width:72px}
         }
     </style>
 }
 
 @section Scripts {
     <script>
-        let currentOrderData = null;
-        let currentCustomerOrders = null;
+        const formatPeso = v => '₱'+ Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+        const pagePath = window.location.pathname;
 
-        // Customer search functionality
-        document.getElementById('customerSearch').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const customerEntries = document.querySelectorAll('.customer-entry');
-            
-            customerEntries.forEach(entry => {
-                const customerName = entry.querySelector('.customer-link').textContent.toLowerCase();
-                if (customerName.includes(searchTerm)) {
-                    entry.style.display = 'flex';
-                } else {
-                    entry.style.display = 'none';
+        // Ensure stale backdrops are cleaned when ALL modals are closed
+        document.addEventListener('hidden.bs.modal', () => {
+            // Delay a tick so Bootstrap can finish its own cleanup
+            setTimeout(()=>{
+                const openModals = document.querySelectorAll('.modal.show');
+                if(openModals.length === 0){
+                    // Remove any leftover backdrops
+                    document.querySelectorAll('.modal-backdrop').forEach(b=>b.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('padding-right');
                 }
-            });
+            },30);
         });
 
-        async function viewCustomerOrders(customerName) {
-            const modalEl = document.getElementById('customerOrdersModal');
-            const modal = new bootstrap.Modal(modalEl);
-            const content = document.getElementById('customerOrdersContent');
-            document.getElementById('customerModalName').textContent = customerName;
-            
-            // Show loading
-            content.innerHTML = `
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading orders...</p>
-                </div>
-            `;
-            
-            modal.show();
-
-            // Filter customer orders from existing data (camelCase for JS)
-            const customerOrders = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                Model.CustomerPurchases,
-                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }
-            ));
-            const orders = customerOrders.filter(order => order.customerName === customerName);
-            currentCustomerOrders = { customerName, orders };
-            
-            if (orders.length === 0) {
-                content.innerHTML = `
-                    <div class="text-center py-5 text-muted">
-                        <i class="fas fa-receipt fa-3x mb-3"></i>
-                        <h5>No Orders Found</h5>
-                        <p>This customer has no orders in the selected date range.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            if (orders.length === 1) {
-                // Directly open details for single order
-                modal.hide();
-                const orderId = orders[0].orderId;
-                const handler = () => {
-                    modalEl.removeEventListener('hidden.bs.modal', handler);
-                    viewOrderDetails(orderId);
-                };
-                modalEl.addEventListener('hidden.bs.modal', handler);
-                return;
-            }
-
-            // Multiple orders: show simple list of order numbers and dates
-            content.innerHTML = `
-                <div class="mb-3 text-muted">Select an order to view details</div>
-                <div class="list-group">
-                    ${orders
-                        .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
-                        .map(o => `
-                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" onclick="openOrderFromCustomerModal(${o.orderId}); return false;">
-                                <div>
-                                    <strong class="text-primary">#${o.orderId}</strong>
-                                    <div>
-                                        <small class="text-muted">
-                                            ${new Date(o.orderDate).toLocaleDateString()} ${new Date(o.orderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </small>
-                                    </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-muted"></i>
-                            </a>
-                        `).join('')}
-                </div>
-            `;
+        // Helper to show (and reuse) a modal instance safely
+        function showModal(id){
+            const el = document.getElementById(id);
+            if(!el) return;
+            let instance = bootstrap.Modal.getInstance(el);
+            if(!instance){ instance = new bootstrap.Modal(el); }
+            instance.show();
         }
 
-        function openOrderFromCustomerModal(orderId) {
-            const modalEl = document.getElementById('customerOrdersModal');
-            const instance = bootstrap.Modal.getInstance(modalEl);
-            if (instance) {
-                const handler = () => {
-                    modalEl.removeEventListener('hidden.bs.modal', handler);
-                    viewOrderDetails(orderId);
-                };
-                modalEl.addEventListener('hidden.bs.modal', handler);
-                instance.hide();
-            } else {
-                viewOrderDetails(orderId);
-            }
+        async function viewCustomerOrders(userId,name){
+            const modalEl=document.getElementById('customerOrdersModal');
+            document.getElementById('customerModalName').textContent=name;
+            const body=document.getElementById('customerOrdersContent');
+            body.innerHTML='<div class="text-center py-4"><div class="spinner-border text-primary"><span class="visually-hidden">Loading...</span></div></div>';
+            try{
+                const res=await fetch(`${pagePath}?handler=CustomerOrders&userId=${encodeURIComponent(userId)}`);
+                if(!res.ok) throw 0;
+                const data=await res.json();
+                if(!data.orders||data.orders.length===0){
+                    body.innerHTML='<div class="text-center text-muted py-4">No orders found for this customer.</div>';
+                } else {
+                    const list=data.orders.map(o=>`<div class='order-list-item' data-order-id='${o.orderId}'><div style='flex:1;display:flex;flex-direction:column;'><span class='order-id-badge'>#${o.orderId}</span><small class='text-muted'>${o.orderDate}</small></div><div style='text-align:right;'><div class='fw-semibold'>${formatPeso(o.totalAmount)}</div><div class='order-status status-${o.status}'>${o.status}</div></div></div>`).join('');
+                    body.innerHTML=`<div style='max-height:500px;overflow-y:auto'>${list}</div>`;
+                }
+            }catch{ body.innerHTML='<div class="text-center text-danger py-4">Error loading orders.</div>'; }
+            showModal('customerOrdersModal');
         }
 
-        function getStatusBadge(status) {
-            const s = (status || '').toLowerCase();
-            let cls;
-            switch (s) {
-                case 'pending': cls = 'bg-warning text-dark'; break;
-                case 'confirmed': cls = 'bg-info text-white'; break;
-                case 'preparing': cls = 'bg-primary text-white'; break;
-                case 'ready': cls = 'bg-secondary text-white'; break;
-                case 'completed': cls = 'bg-success text-white'; break;
-                case 'cancelled': cls = 'bg-danger text-white'; break;
-                default: cls = 'bg-light text-dark'; break;
-            }
-            return `<span class="badge ${cls}">${status}</span>`;
+        async function viewOrderDetails(orderId){
+            const body=document.getElementById('orderDetailsContent');
+            body.innerHTML='<div class="text-center py-4"><div class="spinner-border text-primary"><span class="visually-hidden">Loading...</span></div></div>';
+            try{
+                const res=await fetch(`${pagePath}?handler=OrderDetails&orderId=${encodeURIComponent(orderId)}`);
+                if(!res.ok) throw 0;
+                const o=await res.json();
+                const rows=(o.items||[]).map(i=>`<tr><td>${i.itemName}</td><td class='size'>${i.size}</td><td class='qty'>${i.quantity}</td><td class='price'>${formatPeso(i.unitPrice)}</td><td class='subtotal'>${formatPeso(i.subtotal)}</td></tr>`).join('');
+                body.innerHTML=`<div class='order-details-header'><div class='order-header-row'><div class='order-id'>Order #${o.orderId}<span class='badge order-status status-${o.status}'>${o.status}</span></div></div><div class='order-date'>${o.orderDate}</div><div class='order-meta-block'><div class='order-meta-item'><span class='label'>Customer:</span> ${o.customerName}</div><div class='order-meta-item'><span class='label'>Phone:</span> ${o.customerPhone||'N/A'}</div><div class='order-meta-item'><span class='label'>Payment:</span> ${o.paymentMethod}</div><div class='order-meta-item'><span class='label'>Address:</span> ${o.deliveryAddress||'N/A'}</div></div></div><table class='order-details-table'><thead><tr><th>Item</th><th>Size</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan='4'>Delivery Fee</td><td class='subtotal'>${formatPeso(o.deliveryFee)}</td></tr><tr class='total-row'><td colspan='4'>Total</td><td class='subtotal'>${formatPeso(o.totalAmount)}</td></tr></tfoot></table>`;
+            }catch{ body.innerHTML='<div class="text-center text-danger py-4">Error loading order details.</div>'; }
+            showModal('orderDetailsModal');
         }
 
-        async function viewOrderDetails(orderId) {
-            const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
-            const content = document.getElementById('orderDetailsContent');
-            
-            // Show loading
-            content.innerHTML = `
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading order details...</p>
-                </div>
-            `;
-            
-            modal.show();
+        // Delegated click handling
+        document.addEventListener('click',e=>{
+            const link=e.target.closest('a.customer-link');
+            if(link){ e.preventDefault(); viewCustomerOrders(link.dataset.userId, link.dataset.name); return; }
+            const order=e.target.closest('.order-list-item');
+            if(order){ viewOrderDetails(order.dataset.orderId); }
+        });
 
-            try {
-                const response = await fetch(`?handler=OrderDetails&orderId=${orderId}`);
-                if (!response.ok) throw new Error('Failed to load order details');
-                
-                const order = await response.json();
-                currentOrderData = order;
-                
-                content.innerHTML = `
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6><i class="fas fa-user me-2"></i>Customer Information</h6>
-                            <div class="mb-3">
-                                <strong>Name:</strong> ${order.customerName}<br/>
-                                <strong>Phone:</strong> ${order.customerPhone || 'N/A'}<br/>
-                                <strong>Address:</strong> ${order.deliveryAddress || 'N/A'}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><i class="fas fa-info-circle me-2"></i>Order Information</h6>
-                            <div class="mb-3">
-                                <strong>Order ID:</strong> #${order.orderId}<br/>
-                                <strong>Date:</strong> ${order.orderDate}<br/>
-                                <strong>Status:</strong> <span class="badge bg-info">${order.status}</span><br/>
-                                <strong>Payment:</strong> ${order.paymentMethod}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <h6><i class="fas fa-list me-2"></i>Order Items</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Size</th>
-                                    <th class="text-center">Qty</th>
-                                    <th class="text-end">Unit Price</th>
-                                    <th class="text-end">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${order.items.map(item => `
-                                    <tr>
-                                        <td>${item.itemName}</td>
-                                        <td><span class="badge bg-secondary">${item.size}</span></td>
-                                        <td class="text-center">${item.quantity}</td>
-                                        <td class="text-end">₱${parseFloat(item.unitPrice).toFixed(2)}</td>
-                                        <td class="text-end">₱${parseFloat(item.subtotal).toFixed(2)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <th colspan="4">Delivery Fee:</th>
-                                    <th class="text-end">₱${parseFloat(order.deliveryFee).toFixed(2)}</th>
-                                </tr>
-                                <tr class="table-success">
-                                    <th colspan="4">Total Amount:</th>
-                                    <th class="text-end">₱${parseFloat(order.totalAmount).toFixed(2)}</th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                `;
-            } catch (error) {
-                content.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Failed to load order details. Please try again.
-                    </div>
-                `;
-            }
-        }
-
-        function exportPurchases() {
-            const purchases = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                Model.CustomerPurchases,
-                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }
-            ));
-            const csv = generatePurchaseCSV(purchases);
-            downloadCSV(csv, `purchases_${new Date().toISOString().split('T')[0]}.csv`);
-        }
-
-        function exportCustomerOrders() {
-            if (!currentCustomerOrders) return;
-            
-            const csv = generatePurchaseCSV(currentCustomerOrders.orders);
-            downloadCSV(csv, `${currentCustomerOrders.customerName.replace(/\s+/g, '_')}_orders_${new Date().toISOString().split('T')[0]}.csv`);
-        }
-
-        function exportOrderDetails() {
-            if (!currentOrderData) return;
-            
-            const csv = generateOrderCSV(currentOrderData);
-            downloadCSV(csv, `order_${currentOrderData.orderId}_${new Date().toISOString().split('T')[0]}.csv`);
-        }
-
-        function generatePurchaseCSV(purchases) {
-            const headers = ['Order ID', 'Customer Name', 'Order Date', 'Total Amount', 'Status', 'Payment Method'];
-            const rows = purchases.map(p => [
-                p.orderId,
-                p.customerName,
-                new Date(p.orderDate).toLocaleString(),
-                p.totalAmount,
-                p.status,
-                p.paymentMethod
-            ]);
-            
-            return [headers, ...rows].map(row => 
-                row.map(field => `"${field}"`).join(',')
-            ).join('\n');
-        }
-
-        function generateOrderCSV(order) {
-            const headers = ['Item Name', 'Size', 'Quantity', 'Unit Price', 'Subtotal'];
-            const rows = order.items.map(item => [
-                item.itemName,
-                item.size,
-                item.quantity,
-                item.unitPrice,
-                item.subtotal
-            ]);
-            
-            const csv = [headers, ...rows].map(row => 
-                row.map(field => `"${field}"`).join(',')
-            ).join('\n');
-            
-            return `Order #${order.orderId} - ${order.customerName}\n` +
-                   `Date: ${order.orderDate}\n` +
-                   `Status: ${order.status}\n` +
-                   `Payment: ${order.paymentMethod}\n\n` +
-                   csv +
-                   `\n\nDelivery Fee,,,,"${order.deliveryFee}"` +
-                   `\nTotal Amount,,,,"${order.totalAmount}"`;
-        }
-
-        function downloadCSV(csv, filename) {
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            if (link.download !== undefined) {
-                const url = URL.createObjectURL(blob);
-                link.setAttribute('href', url);
-                link.setAttribute('download', filename);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        }
+        // Search filter
+        const searchInput=document.getElementById('customerSearch');
+        searchInput?.addEventListener('input',()=>{
+            const term=searchInput.value.toLowerCase();
+            document.querySelectorAll('#customerList .customer-entry').forEach(row=>{
+                const name=row.querySelector('.customer-link')?.textContent.toLowerCase()||'';
+                row.style.display=name.includes(term)?'':'none';
+            });
+        });
     </script>
 }

@@ -1,0 +1,144 @@
+@page
+@model PizzafyWeb.Pages.Admin.UsersModel
+@{
+    ViewData["Title"] = "Users";
+    Layout = "_AdminLayout";
+}
+
+<div class="admin-page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="admin-page-title"><i class="fas fa-users me-2"></i>Users</h1>
+            <p class="admin-page-subtitle">Manage customer and admin accounts</p>
+        </div>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (TempData["SuccessMessage"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<div class="row g-4">
+    <div class="col-12 col-xl-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-user-shield me-2 text-danger"></i>Admins</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Admins.Any())
+                            {
+                                foreach (var u in Model.Admins)
+                                {
+                                    <tr>
+                                        <td>@u.Username</td>
+                                        <td>@u.FullName</td>
+                                        <td>
+                                            <span class="badge @(u.AccountStatus == PizzafyWeb.Models.AccountStatus.Active ? "bg-success" : (u.AccountStatus == PizzafyWeb.Models.AccountStatus.Pending ? "bg-warning text-dark" : "bg-secondary"))">
+                                                @u.AccountStatus
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <form method="post" asp-page-handler="SetStatus" class="d-inline">
+                                                <input type="hidden" name="userId" value="@u.UserId" />
+                                                <input type="hidden" name="newStatus" value="@PizzafyWeb.Models.AccountStatus.Active" />
+                                                <button type="submit" class="btn btn-sm btn-outline-success" title="Enable" @(u.AccountStatus == PizzafyWeb.Models.AccountStatus.Active ? "disabled" : null)>
+                                                    <i class="fas fa-toggle-on"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" asp-page-handler="SetStatus" class="d-inline ms-1">
+                                                <input type="hidden" name="userId" value="@u.UserId" />
+                                                <input type="hidden" name="newStatus" value="@PizzafyWeb.Models.AccountStatus.Disabled" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Disable" @(u.AccountStatus == PizzafyWeb.Models.AccountStatus.Disabled ? "disabled" : null)>
+                                                    <i class="fas fa-toggle-off"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr><td colspan="4" class="text-center text-muted">No admin users</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-user me-2 text-primary"></i>Customers</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Customers.Any())
+                            {
+                                foreach (var u in Model.Customers)
+                                {
+                                    <tr>
+                                        <td>@u.Username</td>
+                                        <td>@u.FullName</td>
+                                        <td>
+                                            <span class="badge @(u.AccountStatus == PizzafyWeb.Models.AccountStatus.Active ? "bg-success" : (u.AccountStatus == PizzafyWeb.Models.AccountStatus.Pending ? "bg-warning text-dark" : "bg-secondary"))">
+                                                @u.AccountStatus
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <form method="post" asp-page-handler="SetStatus" class="d-inline">
+                                                <input type="hidden" name="userId" value="@u.UserId" />
+                                                <input type="hidden" name="newStatus" value="@PizzafyWeb.Models.AccountStatus.Active" />
+                                                <button type="submit" class="btn btn-sm btn-outline-success" title="Enable" @(u.AccountStatus == PizzafyWeb.Models.AccountStatus.Active ? "disabled" : null)>
+                                                    <i class="fas fa-toggle-on"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" asp-page-handler="SetStatus" class="d-inline ms-1">
+                                                <input type="hidden" name="userId" value="@u.UserId" />
+                                                <input type="hidden" name="newStatus" value="@PizzafyWeb.Models.AccountStatus.Disabled" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Disable" @(u.AccountStatus == PizzafyWeb.Models.AccountStatus.Disabled ? "disabled" : null)>
+                                                    <i class="fas fa-toggle-off"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr><td colspan="4" class="text-center text-muted">No customer users</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

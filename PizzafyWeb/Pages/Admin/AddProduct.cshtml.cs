@@ -37,6 +37,10 @@ namespace PizzafyWeb.Pages.Admin
         [BindProperty]
         public IFormFile? ImageFile { get; set; }
 
+        // Allows reusing an existing image filename when no new upload is provided
+        [BindProperty]
+        public string? ExistingImageName { get; set; }
+
         [BindProperty]
         public int SelectedSizeId { get; set; }
 
@@ -90,6 +94,34 @@ namespace PizzafyWeb.Pages.Admin
             }
         }
 
+        // New: Fetch existing product info by name (case-insensitive)
+        public async Task<IActionResult> OnGetProductInfoAsync(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return new JsonResult(new { found = false });
+
+            var n = name.Trim();
+            var matches = await _context.MenuItems
+                .Include(m => m.Category)
+                .Where(m => (m.ItemName ?? "").Trim().ToLower() == n.ToLower())
+                .ToListAsync();
+
+            if (!matches.Any())
+                return new JsonResult(new { found = false });
+
+            // Prefer one that has an image
+            var chosen = matches.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m.Image)) ?? matches.First();
+
+            return new JsonResult(new
+            {
+                found = true,
+                categoryId = chosen.CategoryId,
+                categoryName = chosen.Category?.CategoryName ?? "",
+                description = chosen.Description ?? string.Empty,
+                image = chosen.Image ?? string.Empty
+            });
+        }
+
         public async Task<IActionResult> OnPostAsync()
         {
             try
@@ -122,7 +154,7 @@ namespace PizzafyWeb.Pages.Admin
                 var selectedCategory = Categories.FirstOrDefault(c => c.CategoryId == CategoryId)?.CategoryName.ToLower();
 
                 // Strictly require image for pizza category
-                if (selectedCategory == "pizza" && (ImageFile == null || ImageFile.Length == 0))
+                if (selectedCategory == "pizza" && (ImageFile == null || ImageFile.Length == 0) && string.IsNullOrWhiteSpace(ExistingImageName))
                 {
                     ModelState.AddModelError("ImageFile", "Image is required for pizza products.");
                 }
@@ -146,7 +178,7 @@ namespace PizzafyWeb.Pages.Admin
                     return Page();
                 }
 
-                // Save image if uploaded
+                // Save image if uploaded; otherwise reuse existing image if provided
                 string? imageName = null;
                 if (ImageFile != null && ImageFile.Length > 0)
                 {
@@ -189,6 +221,10 @@ namespace PizzafyWeb.Pages.Admin
                         await ImageFile.CopyToAsync(fileStream);
                     }
                 }
+                else if (!string.IsNullOrWhiteSpace(ExistingImageName))
+                {
+                    imageName = ExistingImageName; // reuse existing image filename
+                }
 
                 var menuItem = new MenuItem
                 {
@@ -196,7 +232,7 @@ namespace PizzafyWeb.Pages.Admin
                     Description = Description,
                     CategoryId = CategoryId,
                     UserId = userId,
-                    Image = imageName // null if not uploaded
+                    Image = imageName // may reuse an existing filename
                 };
 
                 _context.MenuItems.Add(menuItem);

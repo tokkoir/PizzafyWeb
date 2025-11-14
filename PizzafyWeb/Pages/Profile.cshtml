@@ -73,10 +73,9 @@
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Input.Address" class="form-label">Delivery Address *</label>
+                            <label asp-for="Input.Address" class="form-label">Address *</label>
                             <textarea asp-for="Input.Address" rows="2" class="form-control" placeholder="House/Unit, Street, Barangay, City, Province"></textarea>
                             <span asp-validation-for="Input.Address" class="text-danger"></span>
-                            <small class="text-muted">Checkout will use this saved address.</small>
                         </div>
 
                         <hr />
@@ -104,6 +103,62 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header" style="background:#8c1007;color:white;">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Delivery Addresses</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Saved addresses dropdown -->
+                    <div class="mb-3">
+                        <label class="form-label">Saved Addresses</label>
+                        <div class="d-flex gap-2">
+                            <select id="addressSelect" class="form-select">
+                                <option value="" selected disabled>Select address...</option>
+                            </select>
+                            <button class="btn btn-outline-secondary" id="editAddressBtn" title="Edit selected" disabled>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="text-end mb-3 d-flex justify-content-end gap-2">
+                        <button class="btn btn-sm btn-outline-primary" id="showNewAddressBtn"><i class="fas fa-plus me-1"></i>Add New Address</button>
+                        <button class="btn btn-sm btn-outline-secondary" id="cancelEditAddressBtn" style="display:none;">Cancel</button>
+                    </div>
+
+                    <!-- Add/Edit Address Form -->
+                    <div id="newAddressForm" class="border rounded p-3" style="display:none;">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label">Street Address / House No. *</label>
+                                <input type="text" id="addrStreet" class="form-control" />
+                                <div class="invalid-feedback">Street address is required</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Barangay *</label>
+                                <select id="addrBarangay" class="form-select"></select>
+                                <div class="invalid-feedback">Barangay is required</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">City</label>
+                                <input type="text" class="form-control" value="Cebu City" disabled />
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Landmark (optional)</label>
+                                <input type="text" id="addrLandmark" class="form-control" />
+                            </div>
+                            <div class="col-12 d-flex justify-content-between align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="addrDefault">
+                                    <label class="form-check-label" for="addrDefault">Set as default address</label>
+                                </div>
+                                <button type="button" class="btn btn-primary" id="saveAddressBtn"><i class="fas fa-save me-1"></i><span id="saveAddressBtnText">Save Address</span></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -186,6 +241,155 @@
                     form.submit();
                 });
             }
+        })();
+
+        // Delivery Address management (same logic as Checkout)
+        (function () {
+            let addressesCache = [];
+            let editingAddressId = null;
+
+            function clearAddressForm() {
+                document.getElementById('addrStreet').value = '';
+                document.getElementById('addrBarangay').value = '';
+                document.getElementById('addrLandmark').value = '';
+                document.getElementById('addrDefault').checked = false;
+                document.getElementById('addrStreet').classList.remove('is-invalid');
+                document.getElementById('addrBarangay').classList.remove('is-invalid');
+            }
+
+            async function loadAddresses() {
+                const sel = document.getElementById('addressSelect');
+                sel.innerHTML = '<option value="" disabled selected>Loading...</option>';
+                try {
+                    const res = await fetch('/api/user/addresses');
+                    if (!res.ok) throw new Error('Failed');
+                    const list = await res.json();
+                    addressesCache = list;
+                    sel.innerHTML = '<option value="" disabled selected>Select address...</option>';
+                    let defaultSet = false;
+                    list.forEach(a => {
+                        const star = a.isDefault ? String.fromCharCode(9733) + ' ' : '';
+                        const text = `${star}${a.streetAddress}, ${a.barangay}, ${a.city}`;
+                        const opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.textContent = text;
+                        sel.appendChild(opt);
+                        if (a.isDefault && !defaultSet) {
+                            sel.value = a.id;
+                            defaultSet = true;
+                        }
+                    });
+                    const addOpt = document.createElement('option');
+                    addOpt.value = 'add_new';
+                    addOpt.textContent = 'Add New Address';
+                    sel.appendChild(addOpt);
+                    document.getElementById('editAddressBtn').disabled = !sel.value || sel.value === '' || sel.value === 'add_new';
+                } catch {
+                    addressesCache = [];
+                    sel.innerHTML = '<option value="" disabled selected>No addresses found</option><option value="add_new">Add New Address</option>';
+                    document.getElementById('editAddressBtn').disabled = true;
+                }
+            }
+
+            async function loadBarangays() {
+                const sel = document.getElementById('addrBarangay');
+                if (!sel) return;
+                sel.innerHTML = '<option value="" disabled selected>Loading...</option>';
+                try {
+                    const res = await fetch('/api/barangays?city=Cebu%20City');
+                    const list = await res.json();
+                    sel.innerHTML = '<option value="" disabled selected>Select barangay...</option>';
+                    list.forEach(n => {
+                        const opt = document.createElement('option');
+                        opt.value = n;
+                        opt.textContent = n;
+                        sel.appendChild(opt);
+                    });
+                } catch {
+                    sel.innerHTML = '<option value="" disabled selected>Select barangay...</option>';
+                }
+            }
+
+            document.getElementById('showNewAddressBtn').addEventListener('click', async (e) => {
+                e.preventDefault();
+                clearAddressForm();
+                await loadBarangays();
+                document.getElementById('newAddressForm').style.display = 'block';
+                document.getElementById('saveAddressBtnText').textContent = 'Save Address';
+                editingAddressId = null;
+                document.getElementById('cancelEditAddressBtn').style.display = 'inline-block';
+            });
+
+            document.getElementById('cancelEditAddressBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('newAddressForm').style.display = 'none';
+                editingAddressId = null;
+                clearAddressForm();
+                document.getElementById('cancelEditAddressBtn').style.display = 'none';
+            });
+
+            document.getElementById('editAddressBtn').addEventListener('click', async () => {
+                const sel = document.getElementById('addressSelect');
+                const id = parseInt(sel.value);
+                if (!id) return;
+                const a = addressesCache.find(x => x.id === id);
+                if (!a) return;
+                await loadBarangays();
+                document.getElementById('addrStreet').value = a.streetAddress || '';
+                document.getElementById('addrBarangay').value = a.barangay || '';
+                document.getElementById('addrLandmark').value = a.landmark || '';
+                document.getElementById('addrDefault').checked = !!a.isDefault;
+                document.getElementById('newAddressForm').style.display = 'block';
+                document.getElementById('saveAddressBtnText').textContent = 'Update Address';
+                editingAddressId = id;
+                document.getElementById('cancelEditAddressBtn').style.display = 'inline-block';
+            });
+
+            document.getElementById('addressSelect').addEventListener('change', (e) => {
+                document.getElementById('editAddressBtn').disabled = !e.target.value || e.target.value === 'add_new';
+                if (e.target.value === 'add_new') {
+                    clearAddressForm();
+                    document.getElementById('newAddressForm').style.display = 'block';
+                    document.getElementById('saveAddressBtnText').textContent = 'Save Address';
+                    editingAddressId = null;
+                    document.getElementById('cancelEditAddressBtn').style.display = 'inline-block';
+                }
+            });
+
+            document.getElementById('saveAddressBtn').addEventListener('click', async () => {
+                const street = document.getElementById('addrStreet');
+                const brgy = document.getElementById('addrBarangay');
+                const landmark = document.getElementById('addrLandmark');
+                const isDefault = document.getElementById('addrDefault').checked;
+
+                street.classList.toggle('is-invalid', !street.value.trim());
+                brgy.classList.toggle('is-invalid', !brgy.value);
+                if (!street.value.trim() || !brgy.value) return;
+
+                const payload = { streetAddress: street.value.trim(), barangay: brgy.value, city: 'Cebu City', landmark: landmark.value.trim(), isDefault };
+                let res;
+                if (editingAddressId) {
+                    res = await fetch(`/api/user/addresses/${editingAddressId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                } else {
+                    res = await fetch('/api/user/addresses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                }
+                if (res.ok) {
+                    document.getElementById('newAddressForm').style.display = 'none';
+                    clearAddressForm();
+                    editingAddressId = null;
+                    document.getElementById('cancelEditAddressBtn').style.display = 'none';
+                    await loadAddresses();
+                } else {
+                    const data = await res.json().catch(()=>({message:'Failed to save address'}));
+                    alert(data.message || 'Failed to save address');
+                }
+            });
+
+            // Init
+            (async () => {
+                await loadAddresses();
+                await loadBarangays();
+            })();
         })();
     </script>
 }

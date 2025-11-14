@@ -5,36 +5,8 @@
     Layout = "_AdminLayout";
 }
 
-@functions {
-    protected int GetSizeSortKey(string size)
-    {
-        var s = (size ?? string.Empty).Trim().ToLowerInvariant();
-        // Named sizes first
-        if (s.Contains("extra small") || s == "xs" || s.Contains("x-small")) return 0;
-        if (s.Contains("small")) return 1;
-        if (s.Contains("medium") || s == "md") return 2;
-        if (s == "large") return 3;
-        if (s.Contains("x-large") || s.Contains("extra large") || s == "xl") return 4;
-        if (s.Contains("xx-large") || s.Contains("2x") || s == "xxl") return 5;
-
-        // Numeric sizes like "9 in", "12 in", "14 in", or with units
-        var m = System.Text.RegularExpressions.Regex.Match(s, @"(\d+\.?\d*)\s*(in|inch|inches|cm|mm|oz)");
-        if (m.Success && decimal.TryParse(m.Groups[1].Value, out var v))
-        {
-            return 100 + (int)(v * 10); // order ascending by numeric value
-        }
-
-        // Plain numeric
-        var m2 = System.Text.RegularExpressions.Regex.Match(s, @"^(\d+)$");
-        if (m2.Success && int.TryParse(m2.Groups[1].Value, out var n))
-        {
-            return 100 + n;
-        }
-
-        // Unknowns at the end
-        return 1000;
-    }
-}
+<!-- Hidden antiforgery token for AJAX -->
+<form method="post" style="display:none">@Html.AntiForgeryToken()</form>
 
 <div class="admin-content">
     <div class="admin-header">
@@ -92,12 +64,20 @@
                                         .Count() > 1
                                         ? "Multiple"
                                         : g.First().Category.CategoryName,
-                        Sizes = g.SelectMany(x => x.MenuPrices.Select(mp => mp.Size.SizeName))
-                                 .Distinct()
+                        Image = g.Select(x => x.Image).FirstOrDefault(img => !string.IsNullOrWhiteSpace(img)) ?? g.First().Image,
+                        Sizes = g.SelectMany(x => x.MenuPrices)
+                                 .GroupBy(mp => new { mp.Size.SizeId, mp.Size.SizeName })
+                                 .Select(gg => new {
+                                     PriceId = gg.OrderBy(p => p.UnitPrice).First().PriceId,
+                                     SizeId = gg.Key.SizeId,
+                                     SizeName = gg.Key.SizeName,
+                                     IsAvailable = gg.Any(p => p.IsAvailable)
+                                 })
+                                 .OrderBy(x => GetSizeSortKey(x.SizeName))
+                                 .ThenBy(x => x.SizeName)
                                  .ToList(),
                         Prices = g.SelectMany(x => x.MenuPrices.Select(mp => mp.UnitPrice))
-                                  .ToList(),
-                        IsAvailable = g.Any(x => x.IsAvailable) // if any variant available, treat as available
+                                  .ToList()
                     })
                     .OrderBy(x => x.CategoryName)
                     .ThenBy(x => x.ItemName)
@@ -106,10 +86,24 @@
 
             @foreach (var item in groupedItems)
             {
-                var orderedSizes = item.Sizes.OrderBy(s => GetSizeSortKey(s)).ThenBy(s => s);
-                <div class="table-row" data-name="@item.ItemName.ToLower()" data-category="@item.CategoryName">
+                var sizes = item.Sizes.ToList();
+                var total = sizes.Count;
+                var enabledCount = sizes.Count(s => s.IsAvailable);
+                var statusText = enabledCount == 0 ? "Inactive" : enabledCount == total ? "Active" : "Partial";
+                var statusClass = enabledCount == 0 ? "badge bg-danger" : enabledCount == total ? "badge bg-success" : "badge bg-warning text-dark";
+                <div class="table-row" data-name="@item.ItemName.ToLower()" data-category="@item.CategoryName" data-item-name="@item.ItemName">
                     <div class="table-cell product-cell">
-                        <div class="product-info">
+                        <div class="product-info" style="display:flex;align-items:center;gap:12px;">
+                            @if (!string.IsNullOrWhiteSpace(item.Image))
+                            {
+                                <img src="/images/products/@item.Image" alt="@item.ItemName" style="width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #eee;" />
+                            }
+                            else
+                            {
+                                <div style="width:40px;height:40px;border-radius:6px;background:#f1f3f5;display:flex;align-items:center;justify-content:center;color:#6c757d;border:1px solid #eee;">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                            }
                             <span class="product-name">@item.ItemName</span>
                         </div>
                     </div>
@@ -119,12 +113,24 @@
                     </div>
 
                     <div class="table-cell size-cell">
-                        @if (orderedSizes.Any())
+                        @if (sizes.Any())
                         {
-                            <div class="size-info">
-                                @foreach (var sizeName in orderedSizes)
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var s in sizes)
                                 {
-                                    <span class="size-badge">@sizeName</span>
+                                    <div class="border rounded px-3 py-2 d-flex align-items-center" title="Click to enable or disable this size.">
+                                        <span class="me-2 fw-semibold">@FormatSizeLabel(s.SizeName)</span>
+                                        <div class="form-check form-switch m-0">
+                                            @if (s.IsAvailable)
+                                            {
+                                                <input class="form-check-input size-toggle" type="checkbox" data-price-id="@s.PriceId" data-size-name="@FormatSizeLabel(s.SizeName)" data-item-name="@item.ItemName" checked />
+                                            }
+                                            else
+                                            {
+                                                <input class="form-check-input size-toggle" type="checkbox" data-price-id="@s.PriceId" data-size-name="@FormatSizeLabel(s.SizeName)" data-item-name="@item.ItemName" />
+                                            }
+                                        </div>
+                                    </div>
                                 }
                             </div>
                         }
@@ -141,11 +147,11 @@
                             var maxPrice = item.Prices.Max();
                             if (minPrice == maxPrice)
                             {
-                                <span class="price">₱@minPrice.ToString("F2")</span>
+                                <span class="price">&#8369;@minPrice.ToString("F2")</span>
                             }
                             else
                             {
-                                <span class="price">₱@minPrice.ToString("F2") - ₱@maxPrice.ToString("F2")</span>
+                                <span class="price">&#8369;@minPrice.ToString("F2") - &#8369;@maxPrice.ToString("F2")</span>
                             }
                         }
                         else
@@ -155,14 +161,7 @@
                     </div>
 
                     <div class="table-cell status-cell">
-                        @if (item.IsAvailable)
-                        {
-                            <span class="status-badge enabled">Active</span>
-                        }
-                        else
-                        {
-                            <span class="status-badge disabled">Disabled</span>
-                        }
+                        <span class="status-badge @statusClass" data-status-badge>@statusText</span>
                     </div>
 
                     <div class="table-cell actions-cell">
@@ -170,12 +169,29 @@
                             <i class="fas fa-edit"></i>
                             Edit
                         </a>
-                        <form method="post" style="display: inline;" class="toggle-availability-form" data-name="@item.ItemName.ToLower()" data-id="@item.RepresentativeId">
-                            <button type="button" data-id="@item.RepresentativeId" class="btn-action toggle-availability-btn @(item.IsAvailable ? "btn-disable" : "btn-enable")" data-available="@(item.IsAvailable ? "1" : "0")">
-                                <i class="fas @(item.IsAvailable ? "fa-ban" : "fa-check")"></i>
-                                @(item.IsAvailable ? "Disable" : "Enable")
-                            </button>
-                        </form>
+                        <div class="d-inline-flex gap-2" data-all-actions>
+                            @if (enabledCount == 0)
+                            {
+                                <button type="button" class="btn-action btn-success all-on" data-item-name="@item.ItemName">
+                                    <i class="fas fa-check"></i> Enable All
+                                </button>
+                            }
+                            else if (enabledCount == total)
+                            {
+                                <button type="button" class="btn-action btn-danger all-off" data-item-name="@item.ItemName">
+                                    <i class="fas fa-ban"></i> Disable All
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn-action btn-success all-on" data-item-name="@item.ItemName">
+                                    <i class="fas fa-check"></i> Enable All
+                                </button>
+                                <button type="button" class="btn-action btn-danger all-off" data-item-name="@item.ItemName">
+                                    <i class="fas fa-ban"></i> Disable All
+                                </button>
+                            }
+                        </div>
                     </div>
                 </div>
             }
@@ -248,59 +264,94 @@
                 });
             }
 
-            // Attach toggle availability handlers
-            document.querySelectorAll('.toggle-availability-btn').forEach(btn => {
-                btn.addEventListener('click', async function (e) {
-                    const id = this.dataset.id;
-                    const form = this.closest('.toggle-availability-form');
-                    const name = form.dataset.name;
-                    const currentlyAvailable = this.dataset.available === '1';
-                    const confirmMsg = currentlyAvailable ? 'Are you sure you want to disable this product?' : 'Are you sure you want to enable this product?';
-                    if (!confirm(confirmMsg)) return;
-
+            // Toggle per-size availability via switch
+            document.querySelectorAll('.size-toggle').forEach(sw => {
+                sw.addEventListener('change', async function() {
+                    const priceId = this.dataset.priceId;
+                    const sizeName = this.dataset.sizeName;
+                    const itemName = this.dataset.itemName;
+                    const row = this.closest('.table-row');
                     try {
-                        const res = await fetch(`?handler=ToggleAvailability&id=${encodeURIComponent(id)}`, { method: 'POST', headers: { 'RequestVerificationToken': getAntiForgeryToken() } });
-                        if (!res.ok) throw new Error('Request failed');
-                        // Toggle button state and status badge in table
-                        const newAvailable = !currentlyAvailable;
-                        // Update state value on the button (1 = available/active, 0 = disabled)
-                        this.dataset.available = newAvailable ? '1' : '0';
-                        // Button class indicates the action (when active -> show Disable action, when disabled -> show Enable action)
-                        if (newAvailable) {
-                            this.classList.remove('btn-enable');
-                            this.classList.add('btn-disable');
-                        } else {
-                            this.classList.remove('btn-disable');
-                            this.classList.add('btn-enable');
-                        }
-                        // Update icon + label: when active show 'Disable', when disabled show 'Enable'
-                        this.innerHTML = `<i class="fas ${newAvailable ? 'fa-ban' : 'fa-check'}"></i> ${newAvailable ? 'Disable' : 'Enable'}`;
+                        const res = await fetch(`?handler=ToggleSizeAvailability&priceId=${encodeURIComponent(priceId)}`, { method: 'POST', headers: { 'RequestVerificationToken': getAntiForgeryToken() } });
+                        const data = await res.json();
+                        if (!res.ok || !data.ok) throw new Error(data.error || 'Request failed');
+                        const isEnabled = data.isAvailable;
+                        // sync switch state with server (in case of mismatch)
+                        this.checked = !!isEnabled;
+                        // Update status and All buttons
+                        updateRowStatus(row);
 
-                        const row = this.closest('.table-row');
-                        const statusBadge = row.querySelector('.status-badge');
-                        if (statusBadge) {
-                            statusBadge.classList.toggle('enabled', newAvailable);
-                            statusBadge.classList.toggle('disabled', !newAvailable);
-                            statusBadge.textContent = newAvailable ? 'Active' : 'Disabled';
-                        }
-
-                        // Update product cards on product listing pages by matching data-name
-                        document.querySelectorAll(`.product-card[data-name='${name}']`).forEach(card => {
-                            const overlay = card.querySelector('.not-available-overlay');
-                            const controls = card.querySelectorAll('.qty-select, .size-select, .add-to-cart-btn');
-                            if (newAvailable) {
-                                card.classList.remove('disabled');
-                                if (overlay) overlay.style.display = 'none';
-                                controls.forEach(c => c.disabled = false);
-                            } else {
-                                card.classList.add('disabled');
-                                if (overlay) overlay.style.display = 'flex';
-                                controls.forEach(c => c.disabled = true);
+                        // Reflect on product cards dropdown options
+                        const nameKey = (itemName || '').toLowerCase();
+                        document.querySelectorAll(`.product-card[data-name='${nameKey}'] .size-select option`).forEach(opt => {
+                            const raw = (opt.textContent || '').trim();
+                            const plain = raw.replace(/\s*-\s*Unavailable$/i, '');
+                            if (plain.toLowerCase() === (sizeName || '').toLowerCase()) {
+                                opt.disabled = !isEnabled;
+                                opt.textContent = isEnabled ? plain : `${plain} - Unavailable`;
                             }
                         });
+                        document.querySelectorAll(`.product-card[data-name='${nameKey}']`).forEach(card => {
+                            const sizeSel = card.querySelector('.size-select');
+                            const priceEl = card.querySelector('.product-price');
+                            if (!sizeSel || !priceEl) return;
+                            if (sizeSel.options[sizeSel.selectedIndex]?.disabled) {
+                                const idx = Array.from(sizeSel.options).findIndex(o => !o.disabled);
+                                if (idx >= 0) sizeSel.selectedIndex = idx;
+                            }
+                            const opt = sizeSel.options[sizeSel.selectedIndex];
+                            const p = parseFloat(opt?.dataset.price);
+                            if (!isNaN(p)) priceEl.textContent = `\u20B1${p.toFixed(2)}`;
+                            const addBtn = card.querySelector('.add-to-cart-btn');
+                            const anyAvailable = Array.from(sizeSel.options).some(o => !o.disabled);
+                            if (addBtn) addBtn.disabled = !anyAvailable;
+                        });
+                    } catch (e) {
+                        alert('Failed to toggle size availability.');
+                        this.checked = !this.checked;
+                    }
+                });
+            });
 
-                    } catch (err) {
-                        alert('Failed to update availability.');
+            // All OFF/ON buttons
+            document.querySelectorAll('.all-off, .all-on').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const row = this.closest('.table-row');
+                    const name = this.dataset.itemName || row.getAttribute('data-item-name');
+                    const enable = this.classList.contains('all-on');
+                    try {
+                        const res = await fetch(`?handler=SetAllSizes&itemName=${encodeURIComponent(name)}&enable=${enable}`, { method: 'POST', headers: { 'RequestVerificationToken': getAntiForgeryToken() } });
+                        const data = await res.json().catch(() => ({ ok: res.ok }));
+                        if (!res.ok || data.ok === false) throw new Error(data.error || 'Request failed');
+                        // Update all switches in the row
+                        row.querySelectorAll('.size-toggle').forEach(sw => sw.checked = enable);
+                        updateRowStatus(row);
+
+                        // Reflect on product cards for this item
+                        const nameKey = (name || '').toLowerCase();
+                        document.querySelectorAll(`.product-card[data-name='${nameKey}'] .size-select option`).forEach(opt => {
+                            const raw = (opt.textContent || '').trim();
+                            const plain = raw.replace(/\s*-\s*Unavailable$/i, '');
+                            opt.disabled = !enable ? true : false; // if enabling, all enabled; if disabling, all disabled
+                            opt.textContent = enable ? plain : `${plain} - Unavailable`;
+                        });
+                        document.querySelectorAll(`.product-card[data-name='${nameKey}']`).forEach(card => {
+                            const sizeSel = card.querySelector('.size-select');
+                            const priceEl = card.querySelector('.product-price');
+                            if (!sizeSel || !priceEl) return;
+                            if (sizeSel.options[sizeSel.selectedIndex]?.disabled) {
+                                const idx = Array.from(sizeSel.options).findIndex(o => !o.disabled);
+                                if (idx >= 0) sizeSel.selectedIndex = idx;
+                            }
+                            const opt = sizeSel.options[sizeSel.selectedIndex];
+                            const p = parseFloat(opt?.dataset.price);
+                            if (!isNaN(p)) priceEl.textContent = `\u20B1${p.toFixed(2)}`;
+                            const addBtn = card.querySelector('.add-to-cart-btn');
+                            const anyAvailable = Array.from(sizeSel.options).some(o => !o.disabled);
+                            if (addBtn) addBtn.disabled = !anyAvailable;
+                        });
+                    } catch (e) {
+                        alert('Failed to update sizes.');
                     }
                 });
             });
@@ -324,6 +375,50 @@
             hasVisibleRows ? hideEmptyState() : showEmptyState();
         }
 
+        function updateRowStatus(row) {
+            const toggles = row.querySelectorAll('.size-toggle');
+            const total = toggles.length;
+            const enabled = Array.from(toggles).filter(t => t.checked).length;
+            const badge = row.querySelector('[data-status-badge]');
+            const actions = row.querySelector('[data-all-actions]');
+
+            if (enabled === 0) {
+                badge.textContent = 'Inactive';
+                badge.className = 'status-badge badge bg-danger';
+                actions.innerHTML = `<button type="button" class="btn-action btn-success all-on" data-item-name="${row.getAttribute('data-item-name')}"><i class="fas fa-check"></i> Enable All</button>`;
+                actions.querySelector('.all-on').addEventListener('click', allBtnHandler);
+            } else if (enabled === total) {
+                badge.textContent = 'Active';
+                badge.className = 'status-badge badge bg-success';
+                actions.innerHTML = `<button type="button" class="btn-action btn-danger all-off" data-item-name="${row.getAttribute('data-item-name')}"><i class="fas fa-ban"></i> Disable All</button>`;
+                actions.querySelector('.all-off').addEventListener('click', allBtnHandler);
+            } else {
+                badge.textContent = 'Partial';
+                badge.className = 'status-badge badge bg-warning text-dark';
+                actions.innerHTML = `
+                    <button type="button" class="btn-action btn-success all-on" data-item-name="${row.getAttribute('data-item-name')}"><i class="fas fa-check"></i> Enable All</button>
+                    <button type="button" class="btn-action btn-danger all-off" data-item-name="${row.getAttribute('data-item-name')}"><i class="fas fa-ban"></i> Disable All</button>`;
+                actions.querySelector('.all-off').addEventListener('click', allBtnHandler);
+                actions.querySelector('.all-on').addEventListener('click', allBtnHandler);
+            }
+        }
+
+        async function allBtnHandler(e) {
+            const btn = e.currentTarget;
+            const row = btn.closest('.table-row');
+            const name = btn.dataset.itemName || row.getAttribute('data-item-name');
+            const enable = btn.classList.contains('all-on');
+            try {
+                const res = await fetch(`?handler=SetAllSizes&itemName=${encodeURIComponent(name)}&enable=${enable}`, { method: 'POST', headers: { 'RequestVerificationToken': getAntiForgeryToken() } });
+                const data = await res.json().catch(() => ({ ok: res.ok }));
+                if (!res.ok || data.ok === false) throw new Error(data.error || 'Request failed');
+                row.querySelectorAll('.size-toggle').forEach(sw => sw.checked = enable);
+                updateRowStatus(row);
+            } catch (err) {
+                alert('Failed to update sizes.');
+            }
+        }
+
         function showEmptyState() {
             const emptyState = document.querySelector('.empty-state');
             if (emptyState) emptyState.style.display = 'flex';
@@ -334,4 +429,40 @@
             if (emptyState) emptyState.style.display = 'none';
         }
     </script>
+}
+
+@using System.Text.RegularExpressions
+@functions {
+    public static string FormatSizeLabel(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return name ?? string.Empty;
+        var m = Regex.Match(name, "\\((\\d+)\\s*oz\\)", RegexOptions.IgnoreCase);
+        if (m.Success)
+        {
+            return $"{m.Groups[1].Value}oz"; // e.g., Small (8 oz) -> 8oz
+        }
+        return name!;
+    }
+    public static double GetSizeSortKey(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return double.MaxValue;
+        var n = name!.Trim();
+        // Named sizes
+        if (n.Equals("Small", StringComparison.OrdinalIgnoreCase)) return 1;
+        if (n.Equals("Medium", StringComparison.OrdinalIgnoreCase)) return 2;
+        if (n.Equals("Large", StringComparison.OrdinalIgnoreCase)) return 3;
+        // Extract number with optional unit
+        var mNum = Regex.Match(n, @"(\d+(?:\.\d+)?)\s*(oz|in)?", RegexOptions.IgnoreCase);
+        if (mNum.Success && double.TryParse(mNum.Groups[1].Value, out var v))
+        {
+            return v;
+        }
+        // Try to extract from parentheses e.g., Small (8 oz)
+        var mParen = Regex.Match(n, @"\((\d+(?:\.\d+)?)\s*oz\)", RegexOptions.IgnoreCase);
+        if (mParen.Success && double.TryParse(mParen.Groups[1].Value, out var v2))
+        {
+            return v2;
+        }
+        return double.MaxValue;
+    }
 }

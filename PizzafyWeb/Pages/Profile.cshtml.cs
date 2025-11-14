@@ -25,6 +25,8 @@ namespace PizzafyWeb.Pages
         public string RoleName { get; set; } = string.Empty;
         public string MemberSince { get; set; } = string.Empty;
 
+        public List<UserAddress> Addresses { get; set; } = new();
+
         [BindProperty]
         public InputModel Input { get; set; } = new();
 
@@ -81,6 +83,13 @@ namespace PizzafyWeb.Pages
                 Address = user.Address ?? string.Empty
             };
 
+            // Load saved delivery addresses
+            Addresses = await _context.UserAddresses
+                .Where(a => a.UserId == userId)
+                .OrderByDescending(a => a.IsDefault)
+                .ThenByDescending(a => a.UpdatedAt)
+                .ToListAsync();
+
             return Page();
         }
 
@@ -91,7 +100,7 @@ namespace PizzafyWeb.Pages
             {
                 return RedirectToPage("/Login");
             }
-
+            
             if (!ModelState.IsValid)
             {
                 // Keep summary data when redisplaying
@@ -102,6 +111,12 @@ namespace PizzafyWeb.Pages
                     RoleName = existing.UserType.ToString();
                     MemberSince = existing.CreatedAt.ToString("MMM dd, yyyy");
                 }
+                // Reload addresses for view
+                Addresses = await _context.UserAddresses
+                    .Where(a => a.UserId == userId)
+                    .OrderByDescending(a => a.IsDefault)
+                    .ThenByDescending(a => a.UpdatedAt)
+                    .ToListAsync();
                 return Page();
             }
 
@@ -130,6 +145,12 @@ namespace PizzafyWeb.Pages
                     Username = user.Username;
                     RoleName = user.UserType.ToString();
                     MemberSince = user.CreatedAt.ToString("MMM dd, yyyy");
+                    // Reload addresses for view
+                    Addresses = await _context.UserAddresses
+                        .Where(a => a.UserId == userId)
+                        .OrderByDescending(a => a.IsDefault)
+                        .ThenByDescending(a => a.UpdatedAt)
+                        .ToListAsync();
                     return Page();
                 }
 

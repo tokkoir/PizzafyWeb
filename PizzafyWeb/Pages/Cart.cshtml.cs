@@ -34,6 +34,49 @@ namespace PizzafyWeb.Pages
             return $"\u20B1{price:F2}";
         }
 
+        /// <summary>
+        /// Merges duplicate cart items for the specified user
+        /// </summary>
+        private async Task<int> MergeDuplicateCartItemsAsync(int userId)
+        {
+            var allCartItems = await _context.Carts
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+
+            var duplicateGroups = allCartItems
+                .GroupBy(c => c.PriceId)
+                .Where(g => g.Count() > 1)
+                .ToList();
+
+            int mergedCount = 0;
+
+            if (duplicateGroups.Any())
+            {
+                foreach (var group in duplicateGroups)
+                {
+                    // Keep the first row, sum quantities, remove the rest
+                    var firstRow = group.OrderBy(c => c.CartId).First();
+                    var totalQty = group.Sum(c => c.Quantity);
+                    firstRow.Quantity = totalQty;
+                    
+                    var duplicates = group.Skip(1).ToList();
+                    mergedCount += duplicates.Count;
+                    _context.Carts.RemoveRange(duplicates);
+                }
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    // Ignore if rows were merged/removed concurrently
+                }
+            }
+
+            return mergedCount;
+        }
+
         public class CartRowVm
         {
             public int CartId { get; set; }
@@ -71,8 +114,22 @@ namespace PizzafyWeb.Pages
             if (orphanedItems.Any())
             {
                 _context.Carts.RemoveRange(orphanedItems);
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    // Ignore if rows were already removed concurrently
+                }
                 TempData["RemovedItemsMessage"] = $"Removed {orphanedItems.Count} unavailable item(s) from your cart.";
+            }
+
+            // Merge duplicate cart rows (same user + same priceId)
+            var mergedCount = await MergeDuplicateCartItemsAsync(userId);
+            if (mergedCount > 0)
+            {
+                TempData["MergedItemsMessage"] = $"Merged {mergedCount} duplicate cart entries.";
             }
 
             Items = await _context.Carts
@@ -136,7 +193,14 @@ namespace PizzafyWeb.Pages
 
             if (priceChangedItems.Any() || removedItems.Any())
             {
-                await _context.SaveChangesAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    // Ignore price-change concurrent modifications
+                }
                 
                 if (priceChangedItems.Any())
                 {
@@ -154,7 +218,9 @@ namespace PizzafyWeb.Pages
             var pricesByName = await _context.MenuPrices
                 .Include(mp => mp.Size)
                 .Include(mp => mp.MenuItem)
-                .Where(mp => itemNames.Contains(mp.MenuItem.ItemName))
+                .Where(mp => itemNames.Contains(mp.MenuItem.ItemName)
+                             && mp.IsAvailable
+                             && mp.MenuItem.IsAvailable)
                 .ToListAsync();
 
             foreach (var row in Items)
@@ -178,11 +244,22 @@ namespace PizzafyWeb.Pages
         public async Task<IActionResult> OnPostRemoveAsync(int id)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            // Delete defensively to avoid concurrency exceptions if the row was already removed
             var row = await _context.Carts.FirstOrDefaultAsync(c => c.CartId == id && c.UserId == userId);
-            if (row != null)
+            if (row == null)
             {
-                _context.Carts.Remove(row);
+                return RedirectToPage();
+            }
+
+            _context.Carts.Remove(row);
+            try
+            {
                 await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Ignore: the row was already deleted by another operation
             }
             return RedirectToPage();
         }
@@ -192,7 +269,14 @@ namespace PizzafyWeb.Pages
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var rows = _context.Carts.Where(c => c.UserId == userId);
             _context.Carts.RemoveRange(rows);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Ignore if some rows were already deleted concurrently
+            }
             return RedirectToPage();
         }
 
@@ -205,7 +289,7 @@ namespace PizzafyWeb.Pages
 
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            // Validate the price/size exists and the linked MenuItem is available
+            // Validate the price/size exists, is available, and the linked MenuItem is available
             var price = await _context.MenuPrices
                 .Include(p => p.MenuItem)
                 .FirstOrDefaultAsync(p => p.PriceId == dto.PriceId);
@@ -217,28 +301,55 @@ namespace PizzafyWeb.Pages
             {
                 return new JsonResult(new { ok = false, message = "This product is not available" }) { StatusCode = 400 };
             }
-
-            // Upsert: if same price_id exists, increase qty
-            var existing = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == userId && c.PriceId == dto.PriceId);
-            if (existing != null)
+            if (!price.IsAvailable)
             {
-                existing.Quantity += dto.Quantity;
-                existing.UnitPrice = price.UnitPrice; // keep latest unit price
+                return new JsonResult(new { ok = false, message = "This size is not available" }) { StatusCode = 400 };
             }
-            else
+
+            // Use a transaction to prevent race conditions
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                var row = new Cart
+                // Merge any existing duplicates first
+                await MergeDuplicateCartItemsAsync(userId);
+
+                // Upsert: if same price_id exists, increase qty
+                var existing = await _context.Carts
+                    .FirstOrDefaultAsync(c => c.UserId == userId && c.PriceId == dto.PriceId);
+                    
+                if (existing != null)
                 {
-                    UserId = userId,
-                    PriceId = dto.PriceId,
-                    Quantity = dto.Quantity,
-                    UnitPrice = price.UnitPrice,
-                    AddedAt = DateTime.UtcNow
-                };
-                await _context.Carts.AddAsync(row);
+                    existing.Quantity += dto.Quantity;
+                    existing.UnitPrice = price.UnitPrice; // keep latest unit price
+                    existing.AddedAt = DateTime.UtcNow; // Update timestamp
+                }
+                else
+                {
+                    var row = new Cart
+                    {
+                        UserId = userId,
+                        PriceId = dto.PriceId,
+                        Quantity = dto.Quantity,
+                        UnitPrice = price.UnitPrice,
+                        AddedAt = DateTime.UtcNow
+                    };
+                    await _context.Carts.AddAsync(row);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await transaction.RollbackAsync();
+                return new JsonResult(new { ok = false, message = "Conflict updating cart. Please try again." }) { StatusCode = 409 };
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
 
-            await _context.SaveChangesAsync();
             return new JsonResult(new { ok = true });
         }
 
@@ -260,13 +371,35 @@ namespace PizzafyWeb.Pages
             if (!string.Equals(newPrice.MenuItem.ItemName, row.MenuPrice.MenuItem.ItemName, StringComparison.OrdinalIgnoreCase))
                 return RedirectToPage();
 
-            // Prevent selecting a size for an unavailable item
-            if (!newPrice.MenuItem.IsAvailable)
+            // Prevent selecting a size for an unavailable item or unavailable size
+            if (!newPrice.MenuItem.IsAvailable || !newPrice.IsAvailable)
                 return RedirectToPage();
 
-            row.PriceId = newPrice.PriceId;
-            row.UnitPrice = newPrice.UnitPrice;
-            await _context.SaveChangesAsync();
+            // Check if changing to a size that already exists in cart
+            var existingWithNewSize = await _context.Carts
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.PriceId == newPriceId && c.CartId != id);
+
+            if (existingWithNewSize != null)
+            {
+                // Merge: add quantity to existing item and remove current item
+                existingWithNewSize.Quantity += row.Quantity;
+                _context.Carts.Remove(row);
+            }
+            else
+            {
+                // Just update the size/price
+                row.PriceId = newPrice.PriceId;
+                row.UnitPrice = newPrice.UnitPrice;
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Ignore if row was updated/removed concurrently
+            }
 
             return RedirectToPage();
         }
@@ -280,7 +413,14 @@ namespace PizzafyWeb.Pages
             if (op == "inc") row.Quantity++;
             else if (op == "dec" && row.Quantity > 1) row.Quantity--;
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Ignore if row was updated/removed concurrently
+            }
             return RedirectToPage();
         }
 

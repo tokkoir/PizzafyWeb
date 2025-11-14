@@ -42,6 +42,44 @@ namespace PizzafyWeb.Models
         [Column("modified_by")]
         public int? ModifiedBy { get; set; }
 
+        // New checkout fields
+        [Column("order_type")]
+        [MaxLength(20)]
+        public string OrderType { get; set; } = "delivery"; // 'delivery' | 'pickup'
+
+        [Column("pickup_date")]
+        public DateTime? PickupDate { get; set; } // date component used
+
+        [Column("pickup_time")]
+        public TimeSpan? PickupTime { get; set; }
+
+        [Column("address_id")]
+        public int? AddressId { get; set; }
+
+        [MaxLength(255)]
+        [Column("delivery_street")]
+        public string? DeliveryStreet { get; set; }
+
+        [MaxLength(100)]
+        [Column("delivery_barangay")]
+        public string? DeliveryBarangay { get; set; }
+
+        [MaxLength(50)]
+        [Column("delivery_city")]
+        public string? DeliveryCity { get; set; } = "Cebu City";
+
+        [MaxLength(255)]
+        [Column("delivery_landmark")]
+        public string? DeliveryLandmark { get; set; }
+
+        [MaxLength(250)]
+        [Column("special_instructions")]
+        public string? SpecialInstructions { get; set; }
+
+        [MaxLength(10)]
+        [Column("payment_method")]
+        public string PaymentMethod { get; set; } = "cash"; // 'cash' | 'gcash'
+
         // Navigation properties
         [ForeignKey(nameof(UserId))]
         public User User { get; set; } = null!;

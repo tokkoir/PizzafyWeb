@@ -169,7 +169,7 @@
     <script>
         async function refreshCartCount() {
             try {
-                const res = await fetch('/api/cart/count');
+                const res = await fetch('/api/cart/count', { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
                 if (!res.ok) return;
                 const data = await res.json();
                 const el = document.getElementById('cart-count');

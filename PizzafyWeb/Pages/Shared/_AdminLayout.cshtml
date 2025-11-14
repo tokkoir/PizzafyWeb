@@ -16,6 +16,7 @@
     @inject PizzafyWeb.Data.PizzafyDbContext Db
     @{
         var pendingAdminApprovals = 0;
+        string currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? string.Empty;
         try
         {
             if (User?.Identity?.IsAuthenticated == true && (User?.IsInRole("Admin") ?? false))
@@ -26,9 +27,18 @@
         }
         catch { pendingAdminApprovals = 0; }
     }
+    
+    <!-- Mobile sidebar toggle button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <!-- Sidebar overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
     <div class="admin-container">
         <!-- Sidebar -->
-        <aside class="admin-sidebar">
+        <aside class="admin-sidebar" id="adminSidebar">
             <!-- Logo Section -->
             <div class="sidebar-header">
                 <div class="logo-container">
@@ -62,8 +72,8 @@
                 <div class="profile-avatar">
                     <span class="avatar-text">@initials</span>
                 </div>
-                <div class="profile-name">
-                    <div class="profile-username">@User?.Identity?.Name</div>
+                <div class="profile-info">
+                    <div class="profile-name profile-username">@User?.Identity?.Name</div>
                     <div class="profile-role">@((User?.IsInRole("Admin") ?? false) ? "Administrator" : "User")</div>
                 </div>
             </div>
@@ -74,9 +84,9 @@
                 <div class="nav-section">
                     <ul class="nav-list">
                         <li class="nav-item">
-                            <a href="/Admin/Dashboard" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Dashboard" ? "active" : "")">
+                            <a href="/Admin/Dashboard" class="nav-link @(currentPage == "/Admin/Dashboard" ? "active" : "")">
                                 <i class="fas fa-gauge-high"></i>
-                                <span>Dashboard</span>
+                                <span class="nav-link-text">Dashboard</span>
                             </a>
                         </li>
                     </ul>
@@ -86,31 +96,50 @@
                     <h4 class="nav-section-title">MANAGE</h4>
                     <ul class="nav-list">
                         <li class="nav-item">
-                            <a href="/Admin/MenuManagement" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/MenuManagement" ? "active" : "")">
+                            <a href="/Admin/MenuManagement" class="nav-link @(currentPage == "/Admin/MenuManagement" ? "active" : "")">
                                 <i class="fas fa-list"></i>
-                                <span>List of Products</span>
+                                <span class="nav-link-text">List of Products</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/Admin/AddProduct" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/AddProduct" ? "active" : "")">
+                            <a href="/Admin/AddProduct" class="nav-link @(currentPage == "/Admin/AddProduct" ? "active" : "")">
                                 <i class="fas fa-plus"></i>
-                                <span>Add Product</span>
+                                <span class="nav-link-text">Add Product</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/Admin/Orders" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/Orders" ? "active" : "")">
+                            <a href="/Admin/Orders" class="nav-link @(currentPage == "/Admin/Orders" ? "active" : "")">
                                 <i class="fas fa-truck"></i>
-                                <span>Orders</span>
+                                <span class="nav-link-text">Orders</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/Admin/UserApprovals" class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Admin/UserApprovals" ? "active" : "")">
+                            <a href="/Admin/Users" class="nav-link @(currentPage == "/Admin/Users" ? "active" : "")">
+                                <i class="fas fa-users"></i>
+                                <span class="nav-link-text">Users</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Admin/UserApprovals" class="nav-link @(currentPage == "/Admin/UserApprovals" ? "active" : "")">
                                 <i class="fas fa-user-check"></i>
-                                <span>User Approvals</span>
+                                <span class="nav-link-text">User Approvals</span>
                                 @if (pendingAdminApprovals > 0)
                                 {
                                     <span class="badge rounded-pill bg-danger ms-2">@pendingAdminApprovals</span>
                                 }
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Reports Section -->
+                <div class="nav-section">
+                    <h4 class="nav-section-title">REPORTS</h4>
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="/Admin/SalesReport" class="nav-link @(currentPage == "/Admin/SalesReport" ? "active" : "")">
+                                <i class="fas fa-chart-line"></i>
+                                <span class="nav-link-text">Sales Report</span>
                             </a>
                         </li>
                     </ul>
@@ -137,5 +166,48 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+    
+    <script>
+        // Mobile sidebar toggle functionality
+        (function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (sidebarToggle && sidebar && overlay) {
+                function toggleSidebar() {
+                    sidebar.classList.toggle('open');
+                    overlay.classList.toggle('active');
+                    document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+                }
+                
+                function closeSidebar() {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+                
+                sidebarToggle.addEventListener('click', toggleSidebar);
+                overlay.addEventListener('click', closeSidebar);
+                
+                // Close sidebar when clicking on a nav link on mobile
+                const navLinks = sidebar.querySelectorAll('.nav-link');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth <= 768) {
+                            closeSidebar();
+                        }
+                    });
+                });
+                
+                // Close sidebar on window resize if going from mobile to desktop
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth > 768) {
+                        closeSidebar();
+                    }
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

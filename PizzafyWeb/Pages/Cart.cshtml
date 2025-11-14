@@ -68,7 +68,7 @@
                     @foreach (var row in Model.Items)
                     {
                         <tr>
-                            <td>
+                            <td data-label="Item">
                                 <div class="d-flex align-items-center">
                                     <img src="/images/products/@row.Image" alt="@row.ItemName" style="width:60px;height:60px;border-radius:8px;object-fit:cover;margin-right:12px;" />
                                     <div>
@@ -77,20 +77,27 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-center">
+                            <td data-label="Size" class="text-center">
                                 <div class="d-flex justify-content-center">
                                     <form method="post" asp-page-handler="UpdateSize" class="d-flex align-items-center gap-2">
                                         <input type="hidden" name="id" value="@row.CartId" />
                                         <select name="newPriceId" class="form-select form-select-sm" style="width:200px;" onchange="this.form.submit()">
                                             @foreach (var opt in row.Sizes)
                                             {
-                                                <option value="@opt.PriceId" selected="@(opt.PriceId == row.CurrentPriceId)">@opt.SizeName</option>
+                                                if (opt.PriceId == row.CurrentPriceId)
+                                                {
+                                                    <option value="@opt.PriceId" selected>@opt.SizeName</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@opt.PriceId">@opt.SizeName</option>
+                                                }
                                             }
                                         </select>
                                     </form>
                                 </div>
                             </td>
-                            <td class="text-center">
+                            <td data-label="Quantity" class="text-center">
                                 <form method="post" asp-page-handler="UpdateQty" class="d-flex justify-content-center">
                                     <input type="hidden" name="id" value="@row.CartId" />
                                     <div class="d-inline-flex align-items-center border rounded-3 px-2 py-1" style="width:140px;justify-content:space-between;">
@@ -100,9 +107,9 @@
                                     </div>
                                 </form>
                             </td>
-                            <td class="text-end">&#8369;@row.UnitPrice.ToString("0.00")</td>
-                            <td class="text-end">&#8369;@row.Subtotal.ToString("0.00")</td>
-                            <td class="text-end">
+                            <td data-label="Unit Price" class="text-end">&#8369;@row.UnitPrice.ToString("0.00")</td>
+                            <td data-label="Subtotal" class="text-end">&#8369;@row.Subtotal.ToString("0.00")</td>
+                            <td data-label="Action" class="text-end">
                                 <form method="post" asp-page-handler="Remove" class="d-inline">
                                     <input type="hidden" name="id" value="@row.CartId" />
                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove"><i class="fas fa-trash"></i></button>
@@ -121,9 +128,9 @@
             </table>
         </div>
 
-        <div class="text-end mt-3">
-            <a href="/Checkout" class="btn btn-danger ms-2">Proceed to Checkout</a>
-            <a href="/" class="btn btn-outline-danger ms-2">Continue Shopping</a>
+        <div class="text-end mt-3 d-flex flex-column flex-md-row justify-content-md-end gap-2">
+            <a asp-page="/Index" asp-fragment="menu-section" class="btn btn-outline-danger order-2 order-md-1">Continue Shopping</a>
+            <a href="/Checkout" class="btn btn-danger order-1 order-md-2">Proceed to Checkout</a>
         </div>
     }
 </section>
